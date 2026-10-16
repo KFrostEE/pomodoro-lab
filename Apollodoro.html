@@ -1,0 +1,2626 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apollodoro</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%230b1024'/><circle cx='12' cy='14' r='1.4' fill='%23fff'/><circle cx='52' cy='22' r='1' fill='%23fff'/><circle cx='48' cy='50' r='1.2' fill='%23fff'/><path d='M32 6c8 6 11 15 11 26v14H21V32c0-11 3-20 11-26z' fill='%23eef2f7'/><path d='M32 6c4 3 7 7 8.6 12H23.4C25 13 28 9 32 6z' fill='%23ff5d5d'/><circle cx='32' cy='27' r='5' fill='%237cc4ff' stroke='%239aa6b5' stroke-width='2'/><path d='M21 36l-7 10v5l7-5zM43 36l7 10v5l-7-5z' fill='%23ff5d5d'/><path d='M25 46h14l-2.5 4h-9z' fill='%23ffb347'/><path d='M27 50h10l-5 10z' fill='%23ff8a3d'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05070f;
+  --card:rgba(11,16,31,.9);
+  --card-border:rgba(150,180,255,.11);
+  --text:#e8edf8;
+  --muted:#8e9bb8;
+  --faint:#59647f;
+  --work:#ff8a3d;
+  --short:#58c6ff;
+  --long:#b89cff;
+  --accent:var(--work);
+  --accent-rgb:255,138,61;
+  --radius:20px;
+  --mono:'Share Tech Mono',ui-monospace,Consolas,monospace;
+}
+body[data-mode="short"]{--accent:var(--short);--accent-rgb:88,198,255}
+body[data-mode="long"]{--accent:var(--long);--accent-rgb:184,156,255}
+
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  background:
+    radial-gradient(1100px 700px at 85% -10%, #1b1438 0%, transparent 60%),
+    radial-gradient(900px 700px at -5% 110%, #0c1d3a 0%, transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:'Space Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+.app{position:relative;z-index:1;max-width:1780px;margin:0 auto;padding:20px 24px 28px}
+button{font:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* ---------- header ---------- */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:48px;height:48px;overflow:visible}
+.logo .planet{fill:url(#logoPlanet)}
+.logo .ring{fill:none;stroke:var(--accent);stroke-width:2;opacity:.8;transition:stroke .6s}
+.logo .ring-front{fill:none;stroke:var(--accent);stroke-width:2;transition:stroke .6s}
+.logo .sat{fill:#fff}
+.brand h1{font-size:26px;margin:0;letter-spacing:.5px;font-weight:700;line-height:1}
+.brand .acc{color:var(--accent);text-shadow:0 0 14px rgba(var(--accent-rgb),.6);transition:color .6s}
+.brand .tag{margin:5px 0 0;color:var(--muted);font-size:13px}
+.top-actions{display:flex;align-items:center;gap:10px}
+.today{font-size:13px;color:var(--muted);background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.06);padding:8px 14px;border-radius:999px;white-space:nowrap}
+.today b{color:var(--accent);font-weight:700;transition:color .6s}
+.icon-btn{width:40px;height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.32);color:var(--text);display:grid;place-items:center;cursor:pointer;transition:background .2s,transform .15s}
+.icon-btn:hover{background:rgba(255,255,255,.08)}
+.icon-btn:active{transform:scale(.92)}
+.icon-btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- layout ----------
+   The timer + quotes ("stage") is always centered and comes first.
+   Fidgets sit beside it when there's room, otherwise below (scroll to reach). */
+.layout{display:grid;gap:22px;justify-content:center;align-items:start;grid-template-columns:minmax(0,560px);grid-template-areas:"stage" "left" "right"}
+.stage{grid-area:stage;display:grid;gap:20px;grid-template-columns:minmax(0,1fr);align-items:stretch;min-width:0}
+.lab{display:flex;flex-direction:column;gap:20px;min-width:0}
+.lab-left{grid-area:left}
+.lab-right{grid-area:right}
+.lab-title{display:flex;align-items:baseline;gap:10px;margin:4px 4px -6px;min-height:24px}
+.lab-title h2{margin:0;font-size:17px;font-weight:700}
+.lab-title span{color:var(--faint);font-size:13px}
+@media (min-width:740px){
+  .layout{grid-template-columns:repeat(2,minmax(0,350px));grid-template-areas:"stage stage" "left right"}
+  .stage{width:min(560px,100%);justify-self:center}
+}
+@media (min-width:1200px) and (min-height:1000px){
+  .layout{grid-template-columns:minmax(0,340px) minmax(0,540px) minmax(0,340px);grid-template-areas:"left stage right"}
+  .stage{width:100%}
+}
+@media (min-width:1000px) and (max-height:999px){
+  .layout{grid-template-columns:repeat(2,minmax(0,490px));grid-template-areas:"stage stage" "left right"}
+  .stage{width:100%;grid-template-columns:minmax(0,500px) minmax(0,1fr)}
+  .inspo{display:flex;flex-direction:column}
+  .inspo .crt{flex:1;font-size:20px}
+  .stage .dial-wrap{width:min(100%,360px,max(220px,calc(100vh - 390px)))}
+}
+@media (min-width:1760px) and (max-height:999px){
+  .layout{grid-template-columns:minmax(0,330px) minmax(0,1000px) minmax(0,330px);grid-template-areas:"left stage right"}
+}
+.card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:0 12px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.04)}
+
+/* ---------- timer card ---------- */
+.timer-card{padding:20px 22px 22px}
+.mode-switch{position:relative;display:grid;grid-template-columns:repeat(3,1fr);background:rgba(0,0,0,.34);border-radius:14px;padding:4px;border:1px solid rgba(255,255,255,.05)}
+.mode-switch button{position:relative;z-index:1;background:none;border:0;color:var(--muted);font-weight:600;font-size:14px;padding:9px 4px;border-radius:10px;cursor:pointer;transition:color .3s}
+.mode-switch button:hover{color:var(--text)}
+.mode-switch button.active{color:#0a0e1a}
+.mode-switch .slider{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/3);border-radius:10px;background:var(--accent);box-shadow:0 0 18px rgba(var(--accent-rgb),.45);transition:transform .4s cubic-bezier(.4,1.5,.5,1),background .5s}
+body[data-mode="short"] .mode-switch .slider{transform:translateX(100%)}
+body[data-mode="long"] .mode-switch .slider{transform:translateX(200%)}
+
+.dial-wrap{position:relative;width:min(100%,360px,max(250px,calc(100vh - 700px)));aspect-ratio:1;margin:18px auto 4px}
+.dial{width:100%;height:100%;display:block;overflow:visible}
+.dial .track{fill:none;stroke:rgba(255,255,255,.06);stroke-width:12}
+.dial .progress{fill:none;stroke:var(--accent);stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset .25s linear,stroke .5s;filter:drop-shadow(0 0 6px rgba(var(--accent-rgb),.65))}
+.dial .tick{stroke:rgba(255,255,255,.13);stroke-width:1.5}
+.dial .tick.major{stroke:rgba(255,255,255,.32);stroke-width:2.2}
+.head-g{transform-origin:170px 170px;transition:transform .25s linear}
+.head-rocket{fill:#fff;filter:drop-shadow(0 0 4px var(--accent))}
+.head-fin{fill:var(--accent);transition:fill .5s}
+.head-flame{fill:#ffd36b;opacity:0;transform-box:fill-box;transform-origin:100% 50%;transition:opacity .3s}
+body.running .head-flame{opacity:1;animation:flickx .09s infinite alternate}
+.orbit-g{transform-origin:170px 170px;animation:spin 40s linear infinite;animation-play-state:paused}
+body.running .orbit-g{animation-play-state:running}
+.orbit{fill:none;stroke:rgba(var(--accent-rgb),.2);stroke-width:1.2;stroke-dasharray:2 7}
+.moon{fill:#cfd3dc;filter:drop-shadow(0 0 5px rgba(220,225,240,.5))}
+.crater{fill:#a5aab6}
+.dial-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;pointer-events:none}
+.status{font-family:var(--mono);font-size:13px;letter-spacing:3px;color:var(--accent);display:flex;align-items:center;gap:8px;transition:color .5s}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+body.running .status-dot{animation:blink 1s steps(2,start) infinite}
+.seven{width:64%}
+.seven svg{width:100%;display:block;overflow:visible;filter:drop-shadow(0 0 7px rgba(var(--accent-rgb),.55))}
+.seg{fill:rgba(var(--accent-rgb),.07);transition:fill .12s}
+.seg.on{fill:var(--accent)}
+.charge{font-family:var(--mono);color:var(--muted);font-size:13px;letter-spacing:1px}
+
+.controls{display:flex;justify-content:center;align-items:center;gap:18px;margin-top:6px}
+.ctl{border:0;cursor:pointer;color:var(--text);display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s,box-shadow .15s,background .3s}
+.ctl svg{width:20px;height:20px}
+.ctl.secondary{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09)}
+.ctl.secondary:hover{background:rgba(255,255,255,.12)}
+.ctl.secondary:active{transform:scale(.9)}
+.ctl.primary{min-width:156px;height:58px;padding:0 26px;border-radius:30px;color:#0a0e1a;font-weight:700;font-size:18px;letter-spacing:.4px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--accent),white 25%),var(--accent));
+  box-shadow:0 6px 0 color-mix(in srgb,var(--accent),black 50%),0 10px 30px rgba(var(--accent-rgb),.35)}
+.ctl.primary:hover{filter:brightness(1.05)}
+.ctl.primary:active{transform:translateY(5px);box-shadow:0 1px 0 color-mix(in srgb,var(--accent),black 50%),0 4px 16px rgba(var(--accent-rgb),.3)}
+
+.cycle{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:20px;color:var(--muted);font-size:13px}
+.leds{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.led{width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#39415a,#161b2a);border:1px solid rgba(255,255,255,.08);transition:all .4s}
+.led.on{background:radial-gradient(circle at 35% 35%,#fff 0 12%,var(--accent) 45%,color-mix(in srgb,var(--accent),black 45%));box-shadow:0 0 10px rgba(var(--accent-rgb),.85);border-color:transparent}
+.task{width:100%;margin-top:16px;background:rgba(0,0,0,.28);border:1px dashed rgba(255,255,255,.13);border-radius:12px;padding:11px 14px;color:var(--text);font:inherit;font-size:15px;text-align:center;transition:border-color .2s}
+.task::placeholder{color:var(--faint)}
+.task:focus{outline:none;border-color:rgba(var(--accent-rgb),.7);border-style:solid}
+
+/* ---------- Rocky + CRT ---------- */
+.inspo{padding:18px 18px 20px}
+.mascot-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.rocky{width:118px;height:136px;flex:none;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;border-radius:16px}
+.rocky svg{width:100%;height:100%;overflow:visible}
+.rocky .ship{transform-box:view-box;transform-origin:50px 70px;animation:bob 4s ease-in-out infinite}
+.rocky.lit .ship{animation:rumble .12s linear infinite}
+.rocky.float .ship{animation:zerog 6s ease-in-out infinite}
+.rocky.bounce .ship{animation:hop .6s cubic-bezier(.3,1.6,.5,1)}
+.rocky .hull{fill:#eef2f7;stroke:#b8c2d0;stroke-width:1.4}
+.rocky .nose,.rocky .fin{fill:#ff5d5d;stroke:#c63c45;stroke-width:1}
+.rocky .stripe{fill:#ff5d5d;opacity:.9}
+.rocky .port{fill:#7cc4ff;stroke:#9aa6b5;stroke-width:3}
+.rocky .port-shine{fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;opacity:.8}
+.rocky .bell{fill:#8a94a3;stroke:#646d7a;stroke-width:1}
+.rocky .flame{opacity:0;transition:opacity .25s;transform-box:fill-box;transform-origin:50% 0}
+.rocky.lit .flame{opacity:1;animation:flicky .1s infinite alternate}
+.rocky .eyes ellipse{fill:#2b2320}
+.rocky .eyes{transform-box:fill-box;transform-origin:center;animation:eyeblink 5s infinite}
+.rocky .ln{fill:none;stroke:#2b2320;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.rocky .mouth-open{fill:#2b2320}
+.rocky .cheek{fill:#ff9fae;opacity:.65}
+.rocky .f{display:none}
+.rocky[data-face="idle"] .f-idle,.rocky[data-face="focus"] .f-focus,.rocky[data-face="break"] .f-break,.rocky[data-face="happy"] .f-happy{display:inline}
+.rocky .tag{transform-box:view-box;transform-origin:85px 93px;animation:sway 3.6s ease-in-out infinite}
+.rocky.bounce .tag{animation:swing .9s cubic-bezier(.3,1.6,.5,1)}
+.rocky .tag-string{fill:none;stroke:#8fb3ff;stroke-width:1.3;stroke-linecap:round}
+.rocky .tag-card{fill:#fffdf6;stroke:#3d6fd9;stroke-width:1.3}
+.rocky .tag-band{fill:#3d6fd9}
+.rocky .tag-hello{fill:#fff;font:700 5px 'Space Grotesk',system-ui,sans-serif;letter-spacing:.5px}
+.rocky .tag-name{fill:#2b2320;font:700 10.5px 'Space Grotesk',system-ui,sans-serif;letter-spacing:.4px}
+.bubble{position:relative;flex:1;background:#eef2fb;color:#1d2233;border-radius:14px;padding:11px 14px;font-size:14px;line-height:1.42;min-height:58px;display:flex;align-items:center}
+.bubble::before{content:"";position:absolute;left:-9px;top:50%;margin-top:-9px;border:9px solid transparent;border-right-color:#eef2fb;border-left:0}
+.bubble.pop{animation:pop .4s cubic-bezier(.3,1.6,.5,1)}
+
+.crt-label{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;letter-spacing:1px;color:var(--faint);margin:0 8px 8px}
+.crt-num{display:flex;align-items:center;gap:4px}
+.crt-num input{width:5ch;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--text);font:inherit;font-size:12px;padding:2px 4px;text-align:center;-moz-appearance:textfield;appearance:textfield}
+.crt-num input::-webkit-inner-spin-button,.crt-num input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.crt-num input:focus{outline:none;border-color:rgba(var(--accent-rgb),.7)}
+.crt-skip{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.crt-skip:hover{color:var(--muted)}
+.crt-skip input{accent-color:var(--accent);margin:0;cursor:pointer}
+#crtSeen{color:var(--muted)}
+.crt-ctl{display:flex;gap:6px;align-items:center}
+.crt-ctl button{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--muted);border-radius:7px;width:28px;height:22px;cursor:pointer;font-size:9px;display:grid;place-items:center}
+.crt-ctl button:hover{background:rgba(255,255,255,.12);color:var(--text)}
+.crt{position:relative;cursor:pointer;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,#1e1407 0%,#0c0803 85%);border-radius:14px;padding:14px 18px 12px;color:#ffb547;font-family:var(--mono);font-size:18.5px;line-height:1.45;min-height:150px;margin:6px;display:flex;flex-direction:column;
+  text-shadow:0 0 7px rgba(255,170,60,.55);
+  box-shadow:inset 0 0 44px rgba(0,0,0,.85),0 0 0 6px #191c26,0 0 0 7px rgba(255,255,255,.07),0 0 32px rgba(255,150,50,.08)}
+.crt::before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(180deg,rgba(0,0,0,.28) 0 1px,transparent 1px 3px)}
+.crt::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent 0,rgba(255,180,80,.06) 50%,transparent 100%);background-size:100% 220%;animation:scan 7s linear infinite}
+.crt-kind{font-size:12px;letter-spacing:2.5px;opacity:.75;margin-bottom:6px}
+.crt-kind:empty{display:none}
+.crt-text{flex:1}
+.crt-text::after{content:"▌";animation:blink 1s steps(2,start) infinite;opacity:.7}
+.crt-author{margin-top:10px;text-align:right;opacity:.8;font-size:14.5px;line-height:1.35;min-height:1.35em}
+.crt-author .who{font-weight:700}
+.crt-bar{height:2px;margin:8px 8px 0;border-radius:2px;background:rgba(255,255,255,.06);overflow:hidden}
+.crt-bar i{display:block;height:100%;width:0;background:rgba(255,181,71,.55)}
+.crt-bar i.run{animation:fillbar linear forwards}
+.crt:hover ~ .crt-bar i.run{animation-play-state:paused}
+
+/* ---------- fidget cards (shared) ---------- */
+.fidget{padding:16px 16px 18px}
+.fidget h3{margin:0 0 12px;font-size:12px;letter-spacing:2.2px;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:baseline;font-weight:600;gap:8px}
+.fidget h3 small{letter-spacing:0;text-transform:none;font-weight:400;color:var(--faint);font-size:12px;text-align:right}
+.pill{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:var(--text);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:background .2s,transform .1s;white-space:nowrap}
+.pill:hover{background:rgba(255,255,255,.12)}
+.pill:active{transform:scale(.94)}
+.pill.on{background:rgba(var(--accent-rgb),.2);border-color:rgba(var(--accent-rgb),.5);color:var(--accent)}
+.screen{position:relative;border-radius:12px;overflow:hidden;border:2px solid #222a3c;box-shadow:inset 0 0 30px rgba(0,0,0,.7)}
+.screen canvas{display:block;width:100%}
+.overlay{position:absolute;font-family:var(--mono);font-size:11px;color:#cfe0ff;opacity:.85;pointer-events:none;letter-spacing:.3px;text-shadow:0 1px 2px #000}
+.knob{display:flex;flex-direction:column;align-items:center;gap:5px;user-select:none;touch-action:none;cursor:ns-resize;border-radius:12px;padding:2px}
+.knob-dial{width:46px;height:46px;border-radius:50%;position:relative;
+  background:radial-gradient(circle at 40% 32%,#6d7790 0,#30374a 58%,transparent 60%),repeating-conic-gradient(#3b4358 0 6deg,#1f2433 6deg 12deg);
+  box-shadow:0 4px 10px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.15)}
+.knob-mark{position:absolute;left:50%;top:5px;width:3px;height:12px;margin-left:-1.5px;border-radius:2px;background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.knob-label{font-size:10px;letter-spacing:1.5px;color:var(--muted);font-family:var(--mono)}
+.knob.grab{cursor:grabbing}
+.knob-row{display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px;padding:0 2px;gap:6px}
+.btn-row{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:12px}
+
+/* nozzle lab */
+#nozzle{height:200px;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.stats div{background:rgba(0,0,0,.3);border-radius:10px;padding:6px 4px;text-align:center;font-family:var(--mono)}
+.stats small{display:block;color:var(--faint);font-size:10px;letter-spacing:1.5px}
+.stats b{font-size:16px;color:var(--accent);font-weight:400;transition:color .5s}
+.stats4{grid-template-columns:repeat(4,1fr);gap:6px}
+.stats4 b{font-size:15px}
+.nz-hint{margin-top:4px;text-align:center;font-size:11.5px;color:var(--faint);min-height:16px;line-height:1.35}
+.regime{margin-top:10px;text-align:center;font-family:var(--mono);font-size:12px;min-height:16px;text-shadow:0 0 8px currentColor;transition:color .3s}
+
+/* launch control */
+.lc-panel{background:linear-gradient(180deg,#262c3a,#191d28);border-radius:12px;padding:12px 10px;border:1px solid rgba(255,255,255,.06);box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
+.lc-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.tgl{display:flex;flex-direction:column;align-items:center;gap:7px;background:none;border:0;padding:2px 0;cursor:pointer;color:var(--muted);border-radius:8px}
+.tgl .lamp{width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ff9a9a,#c21f2b 60%,#5a0b12);box-shadow:0 0 8px rgba(255,50,60,.55);transition:all .2s}
+.tgl.go .lamp{background:radial-gradient(circle at 35% 35%,#d9ffe4,#2fd27f 60%,#0b5a33);box-shadow:0 0 10px rgba(60,230,140,.75)}
+.tgl .base{position:relative;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#d5dbe3,#666e7a 72%);box-shadow:0 2px 4px rgba(0,0,0,.6),inset 0 -1px 2px rgba(0,0,0,.4)}
+.tgl .lever{position:absolute;left:50%;top:12px;width:6px;height:18px;margin-left:-3px;border-radius:3px;background:linear-gradient(90deg,#8e97a3,#f4f7fa,#8e97a3);transition:top .14s cubic-bezier(.4,1.8,.5,1)}
+.tgl .lever::after{content:"";position:absolute;left:-2px;bottom:-3px;width:10px;height:7px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff,#9aa3ad)}
+.tgl.go .lever{top:-6px}
+.tgl.go .lever::after{bottom:auto;top:-3px}
+.tgl small{font-family:var(--mono);font-size:8.5px;letter-spacing:.3px}
+.lc-row{display:flex;align-items:center;gap:14px;margin-top:14px}
+.lc-btn-wrap{position:relative;width:78px;height:78px;perspective:320px;flex:none}
+.lc-btn{position:absolute;inset:9px;border-radius:50%;border:0;cursor:pointer;background:radial-gradient(circle at 40% 35%,#ff8f8f,#d4202f 55%,#7a0c16);color:#fff;font-weight:800;font-size:10.5px;letter-spacing:1px;box-shadow:0 5px 0 #5a0710,0 8px 16px rgba(0,0,0,.5);transition:transform .08s,box-shadow .08s}
+.lc-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #5a0710,0 3px 8px rgba(0,0,0,.5)}
+.lc-cover{position:absolute;inset:0;border-radius:12px;border:2px solid rgba(255,255,255,.35);background:repeating-linear-gradient(45deg,rgba(255,200,40,.6) 0 8px,rgba(20,20,20,.6) 8px 16px);transform-origin:50% 0;transition:transform .35s cubic-bezier(.4,1.4,.5,1);cursor:pointer;z-index:2;display:grid;place-items:center;color:#fff;font-size:9px;font-weight:800;letter-spacing:1px;text-shadow:0 1px 2px #000;padding:0}
+.lc-cover.open{transform:rotateX(-118deg)}
+.lc-side{flex:1;min-width:0}
+.lc-count{font-family:var(--mono);font-size:28px;color:var(--accent);text-shadow:0 0 10px rgba(var(--accent-rgb),.6);letter-spacing:2px;line-height:1.1;transition:color .5s}
+.lc-msg{font-size:12.5px;color:var(--muted);min-height:34px;line-height:1.35;margin-top:4px}
+.lc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:var(--faint)}
+
+/* plumbing puzzle */
+.plumb-screen{background:linear-gradient(180deg,#171c28,#0e121b)}
+#plumb{height:360px;cursor:pointer;touch-action:manipulation}
+.pl-status{display:flex;justify-content:space-between;margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.pl-msg{text-align:center;font-size:12.5px;color:var(--muted);min-height:34px;margin-top:6px;line-height:1.35;transition:color .3s}
+/* orbit + tunnel */
+#orbit{height:250px;touch-action:none;cursor:crosshair}
+#tunnel{height:170px}
+
+/* ---------- footer / toast / flash ---------- */
+.hint{margin-top:26px;text-align:center;color:var(--faint);font-size:12px;line-height:2}
+kbd{font-family:var(--mono);font-size:11px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-bottom-width:2px;border-radius:5px;padding:1px 6px;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,40px);opacity:0;background:#eef2fb;color:#141826;padding:12px 22px;border-radius:999px;font-weight:600;box-shadow:0 10px 40px rgba(0,0,0,.5);transition:transform .4s cubic-bezier(.3,1.5,.5,1),opacity .3s;z-index:50;pointer-events:none;max-width:calc(100vw - 32px);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.flash{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 30% 40%,rgba(var(--accent-rgb),.35),transparent 60%);opacity:0;z-index:40}
+.flash.go{animation:flash 1.4s ease-out}
+
+/* ---------- settings dialog ---------- */
+dialog{border:1px solid var(--card-border);background:#0e1426;color:var(--text);border-radius:20px;padding:0;width:min(460px,calc(100vw - 32px));box-shadow:0 30px 80px rgba(0,0,0,.6)}
+dialog::backdrop{background:rgba(2,4,10,.65);backdrop-filter:blur(3px)}
+.set-form{padding:22px 22px 20px}
+.set-form h2{margin:0 0 4px;font-size:20px}
+.set-form .sub{margin:0 0 18px;color:var(--muted);font-size:13px}
+.set-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.field input[type=number],.field select{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text);padding:9px 10px;font:inherit;font-size:15px}
+.field select option{background:#0e1426}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid rgba(255,255,255,.06);font-size:14px}
+.row input[type=range]{flex:1;max-width:200px;accent-color:var(--accent)}
+.num-sm{width:84px;flex:none;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text);padding:7px 10px;font:inherit;font-size:15px}
+.hint-sm{display:block;color:var(--faint);font-size:12px}
+.sw{appearance:none;-webkit-appearance:none;width:42px;height:24px;border-radius:12px;background:#283049;position:relative;cursor:pointer;transition:background .2s;flex:none;margin:0}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#cfd6e6;transition:transform .2s}
+.sw:checked{background:var(--accent)}
+.sw:checked::after{transform:translateX(18px);background:#fff}
+.sound-row{display:flex;gap:8px;align-items:flex-end}
+.sound-row .field{flex:1}
+.btn{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.07);color:var(--text);border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:600;font-size:14px}
+.btn:hover{background:rgba(255,255,255,.13)}
+.btn.primary{background:var(--accent);color:#0a0e1a;border-color:transparent}
+.btn.link{background:none;border:0;color:var(--faint);padding:9px 4px;font-weight:500}
+.btn.link:hover{color:var(--text)}
+.dlg-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:16px}
+.dlg-actions div{display:flex;gap:8px}
+
+/* ---------- links to the other timers ---------- */
+.variants{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)}
+.variants-title{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.variants-list{display:grid;gap:8px}
+.variant{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:var(--text);text-decoration:none;transition:background .2s,border-color .2s}
+a.variant:hover{background:rgba(var(--accent-rgb),.12);border-color:rgba(var(--accent-rgb),.45)}
+.variant.here{opacity:.6}
+.variant .v-icon{font-size:22px;width:28px;text-align:center}
+.variant b{display:block;font-size:14.5px}
+.variant small{color:var(--muted);font-size:12px}
+.variant .v-go{margin-left:auto;color:var(--accent);font-size:16px}
+.variant-links a{color:var(--muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,.25)}
+.variant-links a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* ---------- keyframes ---------- */
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes blink{to{opacity:.15}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes rumble{0%{transform:translate(0,0)}25%{transform:translate(.7px,-.5px)}50%{transform:translate(-.6px,.4px)}75%{transform:translate(.4px,.6px)}100%{transform:translate(0,0)}}
+@keyframes zerog{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-7px) rotate(6deg)}}
+@keyframes hop{0%{transform:translateY(0)}35%{transform:translateY(-16px) rotate(-4deg)}70%{transform:translateY(0) scale(1.04,.96)}100%{transform:translateY(0)}}
+@keyframes flicky{from{transform:scaleY(.82)}to{transform:scaleY(1.12)}}
+@keyframes flickx{from{transform:scaleX(.75)}to{transform:scaleX(1.15)}}
+@keyframes sway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+@keyframes swing{0%{transform:rotate(0)}25%{transform:rotate(14deg)}55%{transform:rotate(-9deg)}80%{transform:rotate(4deg)}100%{transform:rotate(0)}}
+@keyframes eyeblink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+@keyframes pop{0%{transform:scale(.92)}100%{transform:scale(1)}}
+@keyframes flash{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
+@keyframes fillbar{to{width:100%}}
+@keyframes scan{from{background-position:0 -110%}to{background-position:0 110%}}
+
+@media (max-width:520px){
+  .app{padding:14px 16px 24px}
+  .mode-switch button{font-size:12.5px}
+  .brand .tag{display:none}
+  .today{display:none}
+  .ctl.primary{min-width:128px}
+  .set-grid{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  .orbit-g,.rocky .ship,.rocky .eyes,.rocky .tag,.crt::after{animation:none!important}
+}
+</style>
+</head>
+<body data-mode="work">
+<canvas id="bg" aria-hidden="true"></canvas>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
+        <defs>
+          <radialGradient id="logoPlanet" cx="35%" cy="30%"><stop offset="0" stop-color="#9ec9ff"/><stop offset=".55" stop-color="#3b6fd0"/><stop offset="1" stop-color="#16285a"/></radialGradient>
+        </defs>
+        <path class="ring" d="M5 30 A20 7 -18 0 1 43 18"/>
+        <circle class="planet" cx="24" cy="24" r="12"/>
+        <path class="ring-front" d="M43 18 A20 7 -18 0 1 5 30"/>
+        <circle class="sat" r="2.2"><animateMotion dur="5s" repeatCount="indefinite" path="M24,4 a20,20 0 1,1 -0.1,0"/></circle>
+      </svg>
+      <div>
+        <h1>Apollo<span class="acc">doro</span></h1>
+        <p class="tag">focus with escape velocity</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span class="today" id="todayStats"></span>
+      <button class="icon-btn" id="muteBtn" title="Mute (M)" aria-label="Mute"></button>
+      <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.830l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <div class="stage">
+      <section class="card timer-card" aria-label="Timer">
+        <div class="mode-switch" role="tablist">
+          <button data-mode="work" role="tab" class="active">Focus</button>
+          <button data-mode="short" role="tab">Short break</button>
+          <button data-mode="long" role="tab">Long break</button>
+          <span class="slider" aria-hidden="true"></span>
+        </div>
+
+        <div class="dial-wrap">
+          <svg class="dial" viewBox="0 0 340 340" aria-hidden="true">
+            <g id="ticks"></g>
+            <circle class="track" cx="170" cy="170" r="140"/>
+            <circle class="progress" id="prog" cx="170" cy="170" r="140" transform="rotate(-90 170 170)"/>
+            <g class="head-g" id="headG">
+              <g transform="translate(170 30) scale(1.35)">
+                <path class="head-flame" d="M-6 -2.6 L-17 0 L-6 2.6 Z"/>
+                <path class="head-fin" d="M-3 -4 L-8 -8.5 L-7.5 -3.6 Z M-3 4 L-8 8.5 L-7.5 3.6 Z"/>
+                <path class="head-rocket" d="M10 0 C7 -3.6 2 -4.6 -7 -4 L-7 4 C2 4.6 7 3.6 10 0 Z"/>
+              </g>
+            </g>
+            <g class="orbit-g">
+              <circle class="orbit" cx="170" cy="170" r="164"/>
+              <g transform="translate(170 6)"><circle class="moon" r="6.5"/><circle class="crater" cx="-2" cy="-1.6" r="1.6"/><circle class="crater" cx="2.4" cy="2" r="1.1"/></g>
+            </g>
+          </svg>
+          <div class="dial-center">
+            <div class="status"><span class="status-dot"></span><span id="statusText">GO FOR LAUNCH</span></div>
+            <div class="seven" id="sevenSeg" role="timer" aria-live="off"></div>
+            <div class="charge" id="chargeText"></div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <button class="ctl secondary" id="resetBtn" title="Reset (R)" aria-label="Reset">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.7-6.2"/><path d="M3 4v5h5"/></svg>
+          </button>
+          <button class="ctl primary" id="startBtn"></button>
+          <button class="ctl secondary" id="skipBtn" title="Skip (S)" aria-label="Skip to next">
+            <svg viewBox="0 0 24 24"><path d="M5 5.5l10 6.5-10 6.5z" fill="currentColor"/><path d="M18.5 5.5v13" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+
+        <div class="cycle">
+          <div class="leds" id="cycleLeds"></div>
+          <span id="cycleLabel"></span>
+        </div>
+
+        <input id="taskInput" class="task" placeholder="✎ Today's mission objective…" maxlength="80" autocomplete="off">
+      </section>
+
+      <section class="card inspo" aria-label="Encouragement">
+        <div class="mascot-row">
+          <button class="rocky" id="rocky" data-face="idle" aria-label="Rocky the rocket — click for encouragement">
+            <svg viewBox="0 0 130 150" aria-hidden="true">
+              <defs>
+                <linearGradient id="flameGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3b0"/><stop offset=".35" stop-color="#ffb347"/><stop offset="1" stop-color="#ff5d2a" stop-opacity="0"/></linearGradient>
+              </defs>
+              <g class="ship">
+                <g class="flame"><path d="M37 100 Q50 146 63 100 Z" fill="url(#flameGrad)"/><path d="M43 100 Q50 124 57 100 Z" fill="#fffbe0"/></g>
+                <path class="fin" d="M31 66 L15 88 L15 98 L31 88 Z"/>
+                <path class="fin" d="M69 66 L85 88 L85 98 L69 88 Z"/>
+                <path class="bell" d="M40 92 L60 92 L64 101 L36 101 Z"/>
+                <path class="hull" d="M50 4 C64 14 70 30 70 52 L70 86 Q70 93 63 93 L37 93 Q30 93 30 86 L30 52 C30 30 36 14 50 4 Z"/>
+                <path class="nose" d="M50 4 C57 9 62 15 65.5 23 L34.5 23 C38 15 43 9 50 4 Z"/>
+                <rect class="stripe" x="30" y="80" width="40" height="5"/>
+                <circle class="port" cx="50" cy="38" r="8.5"/>
+                <path class="port-shine" d="M45.5 35 A5 5 0 0 1 49 32.4"/>
+                <g class="f f-idle">
+                  <g class="eyes"><ellipse cx="43" cy="58" rx="2.7" ry="3.4"/><ellipse cx="57" cy="58" rx="2.7" ry="3.4"/></g>
+                  <path class="ln" d="M46 66 Q50 69.5 54 66"/>
+                </g>
+                <g class="f f-focus">
+                  <path class="ln" d="M38.5 51.5 L46 53.4 M61.5 51.5 L54 53.4"/>
+                  <g class="eyes"><ellipse cx="43" cy="58.5" rx="2.7" ry="3"/><ellipse cx="57" cy="58.5" rx="2.7" ry="3"/></g>
+                  <path class="ln" d="M46.5 66.5 Q50 68.5 53.5 66.5"/>
+                </g>
+                <g class="f f-break">
+                  <path class="ln" d="M39.5 59 Q43 55 46.5 59 M53.5 59 Q57 55 60.5 59"/>
+                  <path class="ln" d="M45 65 Q50 71 55 65"/>
+                </g>
+                <g class="f f-happy">
+                  <path class="ln" d="M39.5 54.5 L44.5 57.5 L39.5 60.5 M60.5 54.5 L55.5 57.5 L60.5 60.5"/>
+                  <path class="mouth-open" d="M44 64 Q50 74 56 64 Z"/>
+                </g>
+                <circle class="cheek" cx="37.5" cy="64" r="3.2"/><circle class="cheek" cx="62.5" cy="64" r="3.2"/>
+              </g>
+              <g class="tag">
+                <path class="tag-string" d="M84 93 L95 107 M84 93 L121 107"/>
+                <rect class="tag-card" x="88" y="106" width="40" height="24" rx="4"/>
+                <path class="tag-band" d="M88 110 a4 4 0 0 1 4 -4 h32 a4 4 0 0 1 4 4 v3 h-40 z"/>
+                <text class="tag-hello" x="108" y="111.6" text-anchor="middle">HELLO, I'M</text>
+                <text class="tag-name" x="108" y="125" text-anchor="middle">ROCKY</text>
+              </g>
+            </svg>
+          </button>
+          <div class="bubble" id="bubble" aria-live="polite"></div>
+        </div>
+        <div class="crt-label">
+          <span class="crt-num" title="Type a number to jump to it">CAPCOM #<input id="crtNum" type="number" min="1" aria-label="Jump to transmission number"> / <span id="crtTotal"></span></span>
+          <label class="crt-skip" title="Random picks skip ones you've already seen this session"><input type="checkbox" id="crtSkip"> skip seen <span id="crtSeen"></span></label>
+          <span class="crt-ctl"><button id="crtPrev" aria-label="Previous">◀</button><button id="crtNext" aria-label="Next">▶</button></span>
+        </div>
+        <div class="crt" id="crt" title="Click for a random one · hover to pause">
+          <div class="crt-kind" id="crtKind"></div>
+          <div class="crt-text" id="crtText"></div>
+          <div class="crt-author" id="crtAuthor"></div>
+        </div>
+        <div class="crt-bar" aria-hidden="true"><i id="crtBar"></i></div>
+      </section>
+    </div>
+
+    <aside class="lab lab-left" aria-label="Flight Lab">
+      <div class="lab-title"><h2>Flight Lab 🛠️</h2><span>for idle hands</span></div>
+
+      <section class="card fidget">
+        <h3>Rocket nozzle lab <small>turn knobs · try the real-engine presets</small></h3>
+        <div class="screen"><canvas id="nozzle"></canvas><div class="overlay" id="nzRead" style="left:10px;top:7px"></div></div>
+        <div class="knob-row">
+          <div class="knob" id="kThr" tabindex="0" role="slider" aria-label="Chamber pressure"><div class="knob-dial"><span class="knob-mark"></span></div><span class="knob-label">THROTTLE</span></div>
+          <div class="knob" id="kEps" tabindex="0" role="slider" aria-label="Nozzle expansion ratio"><div class="knob-dial"><span class="knob-mark"></span></div><span class="knob-label">BELL ε</span></div>
+          <div class="knob" id="kAlt" tabindex="0" role="slider" aria-label="Altitude"><div class="knob-dial"><span class="knob-mark"></span></div><span class="knob-label">ALTITUDE</span></div>
+          <div class="knob" id="kTemp" tabindex="0" role="slider" aria-label="Chamber temperature"><div class="knob-dial"><span class="knob-mark"></span></div><span class="knob-label">TEMP</span></div>
+        </div>
+        <div class="stats stats4">
+          <div title="Mach number of the gas leaving the bell"><small>EXIT MACH</small><b id="nzMach">–</b></div>
+          <div title="Exit pressure ÷ outside air pressure (1.00 = ideal)"><small>Pe / Pa</small><b id="nzRatio">–</b></div>
+          <div title="Thrust coefficient: how much the nozzle multiplies chamber-pressure thrust"><small>Cf</small><b id="nzCf">–</b></div>
+          <div title="Specific impulse: seconds of thrust per unit of propellant weight — the rocket's fuel economy"><small>Isp</small><b id="nzIsp">–</b></div>
+        </div>
+        <div class="regime" id="nzRegime"></div>
+        <div class="nz-hint" id="nzHint"></div>
+        <div class="btn-row">
+          <button class="pill" id="nzPreset" title="Real engines">▸ Merlin 1D</button>
+          <button class="pill" id="nzProp">RP-1 / LOX</button>
+          <button class="pill on" id="nzEngine">ENGINE ON</button>
+        </div>
+      </section>
+
+
+      <section class="card fidget">
+        <h3>Propellant plumbing <small>puzzle · click pipes to rotate</small></h3>
+        <div class="screen plumb-screen"><canvas id="plumb"></canvas></div>
+        <div class="pl-status"><span id="plInfo"></span><span id="plLeaks"></span></div>
+        <div class="pl-msg" id="plMsg"></div>
+        <div class="btn-row">
+          <button class="pill" id="plHint">HINT</button>
+          <button class="pill" id="plNew">NEW LAYOUT</button>
+          <button class="pill on" id="plNext" hidden>NEXT LEVEL ▸</button>
+        </div>
+      </section>
+    </aside>
+
+    <aside class="lab lab-right" aria-label="More fidgets">
+      <div class="lab-title"><span>…&amp; curious minds 🛰️</span></div>
+
+      <section class="card fidget">
+        <h3>Orbit sandbox <small>drag to launch a satellite</small></h3>
+        <div class="screen"><canvas id="orbit"></canvas><div class="overlay" id="obHint" style="left:10px;top:7px;opacity:.6">drag from anywhere → release</div><div class="overlay" id="obRead" style="left:10px;bottom:8px;right:10px"></div></div>
+        <div class="btn-row">
+          <button class="pill" id="obAuto">+ CIRCULAR ORBIT</button>
+          <button class="pill" id="obClear">CLEAR</button>
+        </div>
+      </section>
+
+      <section class="card fidget">
+        <h3>Wind tunnel <small>pitch the wing until it stalls</small></h3>
+        <div class="screen"><canvas id="tunnel"></canvas><div class="overlay" id="wtRead" style="left:10px;top:7px"></div></div>
+        <div class="knob-row" style="justify-content:space-around">
+          <div class="knob" id="kAoa" tabindex="0" role="slider" aria-label="Angle of attack"><div class="knob-dial"><span class="knob-mark"></span></div><span class="knob-label">ANGLE α</span></div>
+          <button class="pill" id="wtProf">CAMBERED</button>
+          <div class="knob" id="kSpd" tabindex="0" role="slider" aria-label="Airspeed"><div class="knob-dial"><span class="knob-mark"></span></div><span class="knob-label">AIRSPEED</span></div>
+        </div>
+      </section>
+
+      <section class="card fidget">
+        <h3>Launch control <small>all GO → open cover → launch</small></h3>
+        <div class="lc-panel">
+          <div class="lc-grid" id="lcGrid"></div>
+          <div class="lc-row">
+            <div class="lc-btn-wrap">
+              <button class="lc-btn" id="lcBtn" aria-label="Launch">LAUNCH</button>
+              <button class="lc-cover" id="lcCover" aria-label="Safety cover">SAFETY</button>
+            </div>
+            <div class="lc-side">
+              <div class="lc-count" id="lcCount">T-00</div>
+              <div class="lc-msg" id="lcMsg"></div>
+            </div>
+          </div>
+        </div>
+        <div class="lc-foot"><span>launches today: <b id="lcLaunches">0</b></span><button class="pill" id="lcScrub">SCRUB / RESET</button></div>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="hint">
+    <kbd>Space</kbd> start / pause &nbsp;·&nbsp; <kbd>R</kbd> reset &nbsp;·&nbsp; <kbd>S</kbd> skip &nbsp;·&nbsp; <kbd>M</kbd> mute &nbsp;·&nbsp; click any empty space for a surprise ✨
+    <div class="variant-links" id="variantFoot"></div>
+  </footer>
+</div>
+
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast" role="status"></div>
+
+<dialog id="settings">
+  <form class="set-form" id="setForm" method="dialog">
+    <h2>Settings</h2>
+    <p class="sub">Flight plan parameters. Times are in minutes.</p>
+    <div class="set-grid">
+      <label class="field">Focus<input type="number" name="work" min="1" max="99" required></label>
+      <label class="field">Short break<input type="number" name="short" min="1" max="60" required></label>
+      <label class="field">Long break<input type="number" name="long" min="1" max="99" required></label>
+      <label class="field">Long break every<input type="number" name="interval" min="2" max="12" required></label>
+    </div>
+    <div class="row"><span>Auto-start breaks</span><input class="sw" type="checkbox" name="autoBreak"></div>
+    <div class="row"><span>Auto-start focus sessions</span><input class="sw" type="checkbox" name="autoWork"></div>
+    <div class="row"><span>Rocky's pep talks &amp; fun facts</span><input class="sw" type="checkbox" name="encourage"></div>
+    <div class="row"><span>New transmission every <small class="hint-sm">(seconds · 0 = only when clicked)</small></span><input class="num-sm" type="number" name="quoteSec" min="0" max="3600" step="5"></div>
+    <div class="row"><span>Fidget / button sounds</span><input class="sw" type="checkbox" name="uiSounds"></div>
+    <div class="row sound-row">
+      <label class="field">Alarm sound
+        <select name="sound">
+          <option value="glass">Glass chime</option>
+          <option value="musicbox">Music box</option>
+          <option value="marimba">Marimba</option>
+          <option value="synth">Retro synth</option>
+        </select>
+      </label>
+      <button type="button" class="btn" id="testSound">▶ Test</button>
+    </div>
+    <div class="row"><span>Volume</span><input type="range" name="volume" min="0" max="1" step="0.05"></div>
+    <div class="variants">
+      <div class="variants-title">More timers in the lab</div>
+      <div class="variants-list" id="variantList"></div>
+    </div>
+    <div class="dlg-actions">
+      <button type="button" class="btn link" id="defaultsBtn">Reset to defaults</button>
+      <div>
+        <button type="button" class="btn" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn primary">Save</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(() => {
+'use strict';
+
+/* ================= helpers ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const pad = n => String(n).padStart(2, '0');
+const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const lastPick = new Map();
+const pick = a => { let x; do { x = a[(Math.random() * a.length) | 0]; } while (a.length > 1 && x === lastPick.get(a)); lastPick.set(a, x); return x; };
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+
+// storage keys are prefixed so this page doesn't share saved data with PomodOhm on the same site
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('apollodoro.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('apollodoro.' + k, JSON.stringify(v)); } catch (e) {} }
+};
+
+const DEFAULTS = { work: 25, short: 5, long: 15, interval: 4, autoBreak: true, autoWork: false, sound: 'glass', volume: 0.7, uiSounds: true, encourage: true, quoteSec: 60 };
+const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
+let muted = !!store.get('muted', false);
+
+const MODE_RGB = { work: [255, 138, 61], short: [88, 198, 255], long: [184, 156, 255] };
+const MODE_NAME = { work: 'Focus', short: 'Short break', long: 'Long break' };
+
+/* ================= words ================= */
+// [kind, text, who, note]   kind: 'q' = quote, 'f' = mission file (a short fact about someone,
+// used where there isn't a well-documented quote — no made-up quotes here!)
+const QUOTES = [
+  // --- dawn of flight ---
+  ['q', "It is possible to fly without motors, but not without knowledge and skill.", 'Wilbur Wright', 'co-inventor of the airplane'],
+  ['q', "I am an enthusiast, but not a crank in the sense that I have some pet theories as to the proper construction of a flying machine.", 'Wilbur Wright', '1899 letter to the Smithsonian'],
+  ['q', "If we worked on the assumption that what is accepted as true really is true, then there would be little hope for advance.", 'Orville Wright', 'co-inventor of the airplane'],
+  ['q', "The airplane stays up because it doesn't have the time to fall.", 'Orville Wright', 'co-inventor of the airplane'],
+  ['q', "To invent an airplane is nothing. To build one is something. But to fly is everything.", 'Otto Lilienthal', 'glider pioneer, “the Glider King”'],
+  ['q', "The most effective way to do it, is to do it.", 'Amelia Earhart', 'first woman to fly solo across the Atlantic'],
+  ['q', "Adventure is worthwhile in itself.", 'Amelia Earhart', 'aviation pioneer'],
+  ['q', "The air is the only place free from prejudice.", 'Bessie Coleman', 'first African American woman to earn a pilot license'],
+  ['q', "Perfection is achieved, not when there is nothing more to add, but when there is nothing left to take away.", 'Antoine de Saint-Exupéry', 'airmail pilot & author of The Little Prince'],
+  ['q', "What is essential is invisible to the eye.", 'Antoine de Saint-Exupéry', 'pilot, The Little Prince'],
+  ['q', "The work of the individual still remains the spark that moves mankind ahead.", 'Igor Sikorsky', 'built the first practical helicopter'],
+  ['q', "You do what you can for as long as you can, and when you finally can't, you do the next best thing.", 'Chuck Yeager', 'test pilot, first to break the sound barrier'],
+  ['q', "There's nothing stronger than the heart of a volunteer.", 'Jimmy Doolittle', 'aviator & general, first instrument-only flight'],
+
+  // --- rocketry ---
+  ['q', "Earth is the cradle of humanity, but one cannot live in a cradle forever.", 'Konstantin Tsiolkovsky', 'father of astronautics, the rocket equation'],
+  ['q', "It is difficult to say what is impossible, for the dream of yesterday is the hope of today and the reality of tomorrow.", 'Robert Goddard', 'launched the first liquid-fueled rocket, 1926'],
+  ['q', "I have learned to use the word “impossible” with the greatest caution.", 'Wernher von Braun', 'rocket engineer, Saturn V'],
+  ['q', "Research is what I'm doing when I don't know what I'm doing.", 'Wernher von Braun', 'rocket engineer, Saturn V'],
+  ['q', "To every action there is always opposed an equal reaction.", 'Isaac Newton', 'Third Law — the reason rockets work'],
+  ['q', "Testing leads to failure, and failure leads to understanding.", 'Burt Rutan', 'aerospace engineer, SpaceShipOne'],
+  ['q', "Be quick, be quiet, and be on time.", 'Kelly Johnson', 'Lockheed Skunk Works founder, SR-71'],
+
+  // --- the space race & NASA ---
+  ['q', "Poyekhali! (Let's go!)", 'Yuri Gagarin', 'first human in space, at liftoff in 1961'],
+  ['q', "Circling the Earth in the orbital spaceship, I marveled at the beauty of our planet.", 'Yuri Gagarin', 'first human in space'],
+  ['q', "Once you've been in space, you appreciate how small and fragile the Earth is.", 'Valentina Tereshkova', 'first woman in space, 1963'],
+  ['q', "We choose to go to the Moon in this decade and do the other things, not because they are easy, but because they are hard.", 'John F. Kennedy', 'US President, 1962 Rice University speech'],
+  ['q', "Godspeed, John Glenn.", 'Scott Carpenter', 'astronaut, at Glenn’s 1962 orbital launch'],
+  ['q', "Get the girl to check the numbers… If she says they're good, then I'm ready to go.", 'John Glenn', 'astronaut, about Katherine Johnson'],
+  ['q', "Like what you do, and then you will do your best.", 'Katherine Johnson', 'NASA mathematician, orbital trajectories'],
+  ['q', "Houston, Tranquility Base here. The Eagle has landed.", 'Neil Armstrong', 'Apollo 11 commander'],
+  ['q', "That's one small step for man, one giant leap for mankind.", 'Neil Armstrong', 'Apollo 11 commander'],
+  ['q', "Magnificent desolation.", 'Buzz Aldrin', 'Apollo 11 lunar module pilot, describing the Moon'],
+  ['q', "I really believe that if the political leaders of the world could see their planet from a distance of 100,000 miles their outlook could be fundamentally changed.", 'Michael Collins', 'Apollo 11 command module pilot'],
+  ['q', "Houston, we've had a problem.", 'Jim Lovell', 'Apollo 13 commander'],
+  ['q', "Failure is not an option.", 'Gene Kranz', 'Apollo 13 flight director — a line written for the film that became his book title'],
+  ['q', "From this day forward, Flight Control will be known by two words: “Tough” and “Competent.”", 'Gene Kranz', 'NASA flight director, after the Apollo 1 fire'],
+  ['q', "You can't be what you can't see.", 'Sally Ride', 'physicist, first American woman in space'],
+  ['q', "All adventures, especially into new territory, are scary.", 'Sally Ride', 'physicist & astronaut'],
+  ['q', "Never be limited by other people's limited imaginations.", 'Mae Jemison', 'engineer, physician, first Black woman in space'],
+  ['q', "I touch the future. I teach.", 'Christa McAuliffe', 'teacher selected for space'],
+  ['q', "The path from dreams to success does exist.", 'Kalpana Chawla', 'aerospace engineer, first Indian-born woman in space'],
+  ['q', "Sweat the small stuff.", 'Chris Hadfield', 'ISS commander, An Astronaut’s Guide to Life on Earth'],
+  ['q', "For a successful technology, reality must take precedence over public relations, for nature cannot be fooled.", 'Richard Feynman', 'Nobel Physics 1965, Challenger inquiry'],
+
+  // --- astronomy & the big picture ---
+  ['q', "Look again at that dot. That's here. That's home. That's us.", 'Carl Sagan', 'astronomer, on the Pale Blue Dot photo'],
+  ['q', "Equipped with his five senses, man explores the universe around him and calls the adventure Science.", 'Edwin Hubble', 'astronomer, proved other galaxies exist'],
+  ['q', "Look up at the stars and not down at your feet.", 'Stephen Hawking', 'theoretical physicist'],
+  ['q', "The only way of discovering the limits of the possible is to venture a little way past them into the impossible.", 'Arthur C. Clarke', 'sci-fi author, proposed geostationary satellites'],
+  ['q', "Any sufficiently advanced technology is indistinguishable from magic.", 'Arthur C. Clarke', 'sci-fi author'],
+  ['q', "The good thing about science is that it's true whether or not you believe in it.", 'Neil deGrasse Tyson', 'astrophysicist'],
+  ['q', "Everyone you will ever meet knows something you don't.", 'Bill Nye', 'science educator, former Boeing engineer'],
+  ['q', "And yet it moves.", 'Galileo Galilei', 'legendary line about the Earth'],
+
+  // --- fluids & physics ---
+  ['q', "Big whirls have little whirls that feed on their velocity, and little whirls have lesser whirls and so on to viscosity.", 'Lewis Fry Richardson', 'meteorologist, on the turbulence cascade'],
+  ['q', "When I die and go to heaven there are two matters on which I hope for enlightenment. One is quantum electrodynamics, and the other is the turbulent motion of fluids. About the former I am rather optimistic.", 'Horace Lamb', 'fluid dynamicist (also told of Heisenberg)'],
+  ['q', "Scientists study the world as it is; engineers create the world that has never been.", 'Theodore von Kármán', 'aerodynamicist, co-founded JPL'],
+  ['q', "Nothing in life is to be feared, it is only to be understood.", 'Marie Curie', 'Nobel in Physics & Chemistry'],
+  ['q', "The first principle is that you must not fool yourself — and you are the easiest person to fool.", 'Richard Feynman', 'Nobel Physics 1965'],
+  ['q', "Look deep into nature, and then you will understand everything better.", 'Albert Einstein', ''],
+  ['q', "If I have seen further it is by standing on the shoulders of giants.", 'Isaac Newton', ''],
+  ['q', "Give me a place to stand, and I shall move the Earth.", 'Archimedes', 'mathematician, the lever & buoyancy'],
+  ['q', "A ship in port is safe, but that's not what ships are built for.", 'Grace Hopper', 'computing pioneer, US Navy rear admiral'],
+
+  // --- mottos ---
+  ['q', "Per ardua ad astra. (Through adversity to the stars.)", 'Royal Air Force', 'motto since 1912'],
+  ['q', "Aim High… Fly-Fight-Win.", 'U.S. Air Force', 'motto'],
+  ['q', "Ad astra per aspera. (To the stars through difficulties.)", 'old Latin saying', 'also the Kansas state motto'],
+
+  // --- just for fun ---
+  ['q', "Δv = vₑ · ln(m₀ / m_f). Mass ratio is destiny.", 'the rocket equation', 'Tsiolkovsky, 1903'],
+  ['q', "Lift = weight, thrust = drag. Now hold that for 25 minutes.", 'every flight instructor ever', ''],
+
+  // --- mission files: pioneers of flight ---
+  ['f', "Sketched ornithopters and a helical “air screw” in the 1480s — four centuries before powered flight.", 'Leonardo da Vinci', 'artist & engineer'],
+  ['f', "In 1799 identified the four forces of flight — lift, drag, thrust and weight.", 'Sir George Cayley', '“father of aeronautics”'],
+  ['f', "Built a wind tunnel in 1901 and tested about 200 wing shapes before building the 1903 Flyer.", 'Wilbur & Orville Wright', 'first powered, controlled flight'],
+  ['f', "Flew the 14-bis in Paris in 1906 and helped popularize the wristwatch, so he could check the time without letting go of the controls.", 'Alberto Santos-Dumont', 'Brazilian aviation pioneer'],
+  ['f', "Made the first solo nonstop flight across the Atlantic in 1927 — 33.5 hours in the Spirit of St. Louis.", 'Charles Lindbergh', 'aviator'],
+  ['f', "Flew a plane in 1929 using only instruments, with the cockpit hooded — proving “blind flying” possible.", 'Jimmy Doolittle', 'aviator & engineer (MIT ScD)'],
+  ['f', "Became the first woman to break the sound barrier, in 1953.", 'Jacqueline Cochran', 'record-setting pilot'],
+  ['f', "Broke the sound barrier in the Bell X-1 in 1947 — flying with two cracked ribs.", 'Chuck Yeager', 'test pilot'],
+  ['f', "Independently invented the jet engine; the first jet-powered flight was the He 178 in 1939.", 'Frank Whittle & Hans von Ohain', 'jet engine pioneers'],
+  ['f', "Invented the “area rule” — the Coke-bottle fuselage that tamed transonic drag — plus supercritical wings and winglets.", 'Richard Whitcomb', 'NASA aerodynamicist'],
+
+  // --- mission files: rockets & spaceflight ---
+  ['f', "Launched the first liquid-fueled rocket in 1926. It flew for 2.5 seconds and reached about 12 m.", 'Robert Goddard', 'rocketry pioneer'],
+  ['f', "His 1923 book “The Rocket into Planetary Space” inspired a whole generation of rocket builders.", 'Hermann Oberth', 'rocketry pioneer'],
+  ['f', "Led the Soviet program behind Sputnik and Gagarin's flight — his identity was a state secret until his death in 1966.", 'Sergei Korolev', 'Soviet “Chief Designer”'],
+  ['f', "Made the first spacewalk in 1965. His suit ballooned so much he had to let air out to squeeze back inside.", 'Alexei Leonov', 'cosmonaut'],
+  ['f', "Designed the Mercury capsule and shaped every US crewed spacecraft through the Shuttle.", 'Max Faget', 'NASA engineer'],
+  ['f', "Led the team that wrote Apollo's flight software; its priority scheduling kept Apollo 11's landing on track during the 1202 alarms.", 'Margaret Hamilton', 'MIT software engineer'],
+  ['f', "Became NASA's first Black female engineer in 1958.", 'Mary Jackson', 'aerospace engineer'],
+  ['f', "Taught herself and her team FORTRAN so they could program NASA's new IBM computers.", 'Dorothy Vaughan', 'NASA mathematician & supervisor'],
+  ['f', "Took the “Earthrise” photo from lunar orbit on Christmas Eve 1968.", 'Bill Anders', 'Apollo 8 astronaut'],
+  ['f', "Was the first woman to pilot, and later command, a Space Shuttle.", 'Eileen Collins', 'astronaut & test pilot'],
+  ['f', "Became the first Hispanic woman in space in 1993, and later directed Johnson Space Center.", 'Ellen Ochoa', 'engineer & astronaut'],
+  ['f', "Holds the American record for most total days in space.", 'Peggy Whitson', 'biochemist & ISS commander'],
+  ['f', "Flew the longest single spaceflight by a woman (328 days) and joined the first all-female spacewalk in 2019.", 'Christina Koch', 'electrical engineer & astronaut'],
+  ['f', "In 2015 a Falcon 9 first stage landed upright after an orbital launch — a first for an orbital rocket.", 'SpaceX', 'launch company'],
+  ['f', "In 2024 a Super Heavy booster was caught out of the air by the launch tower's “chopsticks.”", 'SpaceX Starship', 'launch system'],
+  ['f', "Curiosity landed in 2012 using a rocket-powered “sky crane” that lowered the rover on cables.", 'NASA JPL', 'Mars Science Laboratory'],
+  ['f', "Ingenuity made the first powered flight on another planet in 2021 — carrying a swatch of fabric from the 1903 Wright Flyer.", 'NASA JPL', 'Mars helicopter'],
+  ['f', "Launched in 1977 with a golden record of sounds and music from Earth, and now flying through interstellar space.", 'Voyager 1 & 2', 'NASA probes'],
+  ['f', "Unfolded a 6.5 m mirror made of 18 gold-coated beryllium segments, a million miles from Earth.", 'James Webb Space Telescope', 'NASA/ESA/CSA'],
+
+  // --- mission files: fluids & physics ---
+  ['f', "Published “Hydrodynamica” in 1738 — the origin of Bernoulli's principle.", 'Daniel Bernoulli', 'mathematician & physicist'],
+  ['f', "Wrote the equations of inviscid (frictionless) fluid flow in 1757.", 'Leonhard Euler', 'mathematician'],
+  ['f', "The Navier–Stokes equations describe almost every fluid flow — proving their solutions always behave is a $1M Millennium Prize problem.", 'Claude-Louis Navier & George Stokes', 'mathematicians & physicists'],
+  ['f', "His 1883 dye-in-a-pipe experiment showed when smooth laminar flow turns turbulent.", 'Osborne Reynolds', 'engineer, the Reynolds number'],
+  ['f', "Took the first photographs of shock waves around a supersonic bullet in 1887.", 'Ernst Mach', 'physicist, the Mach number'],
+  ['f', "Discovered the boundary layer in 1904 — the thin skin of slow air that controls drag and stall.", 'Ludwig Prandtl', '“father of modern aerodynamics”'],
+  ['f', "Linked lift to circulation: L = ρ·V·Γ. (The wind tunnel fidget runs on their math!)", 'Martin Kutta & Nikolai Joukowski', 'aerodynamicists'],
+  ['f', "Described the swirling “vortex street” behind objects in flow, and the Kármán line at 100 km.", 'Theodore von Kármán', 'aerodynamicist'],
+  ['f', "Worked out that planets move in ellipses with the Sun at one focus — the basis of every orbit calculation.", 'Johannes Kepler', 'astronomer'],
+  ['f', "Showed with a cup of ice water that Challenger's O-rings lost their springiness in the cold.", 'Richard Feynman', 'Rogers Commission, 1986'],
+];
+const ENCOURAGE = [
+  'Houston, we have… a very productive session. 🚀',
+  'You’re cleared for takeoff. Keep climbing!',
+  'Max-Q passed. It’s smooth sailing from here.',
+  'Stage separation complete — lighter and faster now.',
+  'Steady thrust beats short bursts. Keep that burn going.',
+  'You’re on a great trajectory. 📈',
+  'Focus level: escape velocity.',
+  'Mission control is impressed. Seriously.',
+  'Keep your nose up and your drag low.',
+  'All systems nominal. You’re doing great.',
+  'Ad astra per aspera — to the stars through difficulties. ✨',
+  'Even a Saturn V starts slow. Momentum is building.',
+  'One small step for you, one giant leap for your to-do list.',
+  'Gravity is just a suggestion today.',
+  'Your thrust-to-weight ratio is looking excellent.',
+  'Turbulence is temporary. Keep flying straight.',
+  'Distractions? Jettisoned. 🧑‍🚀',
+  'You’re in the zone — the low-drag zone.',
+  'Throttle up! You’ve got the delta-v for this.',
+  'Clear skies and tailwinds ahead. ☀️',
+  'Every orbit starts with a single burn.',
+  'The sky isn’t the limit — there are footprints on the Moon.',
+  'Stay on course; tiny corrections add up.',
+  'Fuel check: plenty left in the tank. ⛽',
+  'Lift > weight. Keep it up!',
+  'Sip some water. Astronauts recycle theirs — you don’t have to. 💧',
+  'Ideally expanded and fully efficient. Nice.',
+  'Your attitude control is on point.',
+];
+const BREAK_TIPS = [
+  'Coast phase: let your engines cool. 😌',
+  'Stretch! Astronauts exercise about 2 hours a day to stay strong.',
+  '20-20-20: look at something 20 feet away for 20 seconds. 👀',
+  'Hydrate — the ISS recycles its water for a reason. 💧',
+  'Take a walk. Gravity is free here on Earth.',
+  'Look out a window. Find a cloud and name its type. ☁️',
+  'Deep breath. Cabin pressure is nominal. 🌬️',
+  'Snack resupply mission authorized. 🍎',
+  'Roll your shoulders. Release that structural load.',
+  'Rest your eyes. Even telescopes close their shutters.',
+  'Unclench your jaw. You’re not pulling 9 g right now.',
+  'Tidy one thing. Loose objects are dangerous in zero-g!',
+];
+const FUN_FACTS = [
+  'Fun fact: the Wright brothers’ first flight in 1903 lasted 12 seconds and covered 120 feet. ✈️',
+  'Fun fact: the Wrights built their own wind tunnel in 1901 to test about 200 wing shapes.',
+  'Fun fact: the first hot-air balloon passengers (1783) were a sheep, a duck and a rooster. 🐑🦆🐓',
+  'Fun fact: at liftoff a Saturn V burned roughly 13 tonnes of propellant every second.',
+  'Fun fact: the SR-71’s titanium skin got so hot it grew several inches longer in flight.',
+  'Fun fact: the SR-71 leaked fuel on the ground — its panels only sealed tight once they heated up.',
+  'Fun fact: the X-15 rocket plane reached Mach 6.7 in 1967, still the record for a crewed aircraft.',
+  'Fun fact: Chuck Yeager broke the sound barrier in 1947 with two cracked ribs.',
+  'Fun fact: sound travels ~343 m/s at sea level but only ~295 m/s at airliner cruise altitude — the air is colder.',
+  'Fun fact: peregrine falcons dive faster than 300 km/h — the fastest animal on Earth. 🦅',
+  'Fun fact: albatrosses can glide for hours without flapping, using “dynamic soaring” over the waves.',
+  'Fun fact: hummingbirds can fly backward. 🐦',
+  'Fun fact: common swifts can stay airborne for about 10 months straight — eating and even sleeping on the wing.',
+  'Fun fact: bar-headed geese migrate over the Himalayas, above 7,000 m.',
+  'Fun fact: owls fly almost silently thanks to comb-like feather edges — engineers copy them for quieter fans. 🦉',
+  'Fun fact: maple seeds spin like helicopter blades, using a leading-edge vortex to slow their fall. 🍁',
+  'Fun fact: honeybees beat their wings about 230 times per second. 🐝',
+  'Fun fact: the ISS circles Earth every ~90 minutes, so the crew sees about 16 sunrises a day. 🌅',
+  'Fun fact: escape velocity from Earth is about 11.2 km/s.',
+  'Fun fact: the Kármán line, 100 km up, is the commonly used edge of space.',
+  'Fun fact: astronauts can grow a few centimeters taller in orbit as their spines decompress.',
+  'Fun fact: the Apollo Guidance Computer had about 4 KB of erasable memory.',
+  'Fun fact: lasers still bounce off mirrors Apollo astronauts left on the Moon.',
+  'Fun fact: the Moon drifts about 3.8 cm farther from Earth every year. 🌙',
+  'Fun fact: Voyager 1 is the most distant human-made object — more than 24 billion km away.',
+  'Fun fact: Hubble’s mirror was ground about 2 microns off at the edge, and was fixed with corrective optics in 1993. 🔭',
+  'Fun fact: the Mars helicopter Ingenuity carried a tiny piece of fabric from the Wright Flyer.',
+  'Fun fact: liquid hydrogen boils at −253 °C.',
+  'Fun fact: hydrogen–oxygen flames are nearly invisible in daylight.',
+  'Fun fact: shock diamonds appear when exhaust pressure doesn’t match the air around it. Try it in the nozzle lab!',
+  'Fun fact: aerogel is about 99.8% air — one of the lightest solids ever made.',
+  'Fun fact: NASA’s Stardust probe caught comet dust in aerogel and brought it home in 2006.',
+  'Fun fact: by weight, about half of a Boeing 787’s structure is carbon-fiber composite.',
+  'Fun fact: jet turbine blades often run in gas hotter than their own melting point — cooling air and ceramic coatings keep them alive.',
+  'Fun fact: many turbine blades are grown as a single metal crystal so they don’t creep at high temperature.',
+  'Fun fact: Space Shuttle tiles shed heat so fast you could hold one by the edges right out of a 1,200 °C oven.',
+  'Fun fact: titanium is about 45% lighter than steel with similar strength.',
+  'Fun fact: a Boeing 747 has around six million parts.',
+  'Fun fact: contrails are clouds made of ice crystals formed from water vapor in jet exhaust.',
+  'Fun fact: memory foam was developed under a NASA contract for aircraft seats.',
+  'Fun fact: Goddard’s first liquid-fueled rocket (1926) flew for just 2.5 seconds.',
+];
+const START_WORK = ['Ignition! We have liftoff. 🚀', 'Main engine start. Let’s fly!', 'Go for launch. Focus engaged.', 'Clear of the tower — climbing!'];
+const START_BREAK = ['Coasting. Enjoy the view. 🌍', 'Engines off — time to float.', 'Orbit achieved. Relax a while.'];
+const RESUME_MSGS = ['Relight successful! 🔥', 'Back on the burn.', 'Hold released — resuming the count.'];
+const PAUSE_MSGS = ['Hold, hold, hold. Countdown paused. ⏸', 'Engines throttled down. Standing by.', 'Holding at this altitude.'];
+const WORK_DONE = ['MECO! Main engine cutoff — time for a break 🎉', 'Orbit achieved! +1 pomodoro 🛰️', 'Burn complete. Nailed the insertion!'];
+const LONG_EARNED = ['Mission complete! Long break unlocked 🎉', 'Full flight plan done — enjoy the splashdown 🌊'];
+const BREAK_DONE = ['Break’s over — prepping the next launch 🚀', 'Deorbit burn done. Back to work!', 'Refueled and ready. Go for launch?'];
+const TICKLE = ['Hey! Watch the fins! 🚀', 'Whoa — unscheduled engine test!', 'Houston, I’ve got the giggles.', 'Stop! I’ll go into a flat spin! 😵‍💫'];
+
+/* ================= sound ================= */
+const Snd = (() => {
+  let ctx = null, master, echoIn, noiseBuf, collect = null, alarmNodes = [];
+  const track = n => { if (collect) collect.push(n); return n; };
+
+  function ensure() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -14; comp.ratio.value = 4;
+      master = ctx.createGain();
+      master.connect(comp); comp.connect(ctx.destination);
+      echoIn = ctx.createGain();
+      const d = ctx.createDelay(1); d.delayTime.value = 0.27;
+      const fb = ctx.createGain(); fb.gain.value = 0.33;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2600;
+      const wet = ctx.createGain(); wet.gain.value = 0.4;
+      echoIn.connect(d); d.connect(lp); lp.connect(fb); fb.connect(d); lp.connect(wet); wet.connect(master);
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 3, ctx.sampleRate);
+      const ch = noiseBuf.getChannelData(0);
+      for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+      setVolume();
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function setVolume() { if (master) master.gain.value = muted ? 0 : settings.volume; }
+  function setMaster(v) { if (ensure()) master.gain.value = v; }
+
+  function tone(f, t, { dur = 1, type = 'sine', g = 0.2, attack = 0.005, echo = 0, slideTo = null } = {}) {
+    const o = track(ctx.createOscillator());
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur * 0.8);
+    const a = ctx.createGain();
+    a.gain.setValueAtTime(0.0001, t);
+    a.gain.exponentialRampToValueAtTime(g, t + attack);
+    a.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(a); a.connect(master);
+    if (echo) { const s = ctx.createGain(); s.gain.value = echo; a.connect(s); s.connect(echoIn); }
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  function noise(t, { dur = 0.1, g = 0.1, type = 'bandpass', freq = 2000, freqTo = null, q = 1, attack = 0.004 } = {}) {
+    const src = track(ctx.createBufferSource()); src.buffer = noiseBuf;
+    const f = ctx.createBiquadFilter(); f.type = type; f.Q.value = q;
+    f.frequency.setValueAtTime(freq, t);
+    if (freqTo) f.frequency.exponentialRampToValueAtTime(freqTo, t + dur);
+    const a = ctx.createGain();
+    a.gain.setValueAtTime(0.0001, t);
+    a.gain.exponentialRampToValueAtTime(g, t + attack);
+    a.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f); f.connect(a); a.connect(master);
+    src.start(t, Math.random() * 0.5); src.stop(t + dur + 0.05);
+  }
+
+  const INSTR = {
+    glass(f, t, v) { tone(f, t, { dur: 2.4, g: 0.16 * v, echo: 0.7 }); tone(f * 2.003, t, { dur: 1.3, g: 0.05 * v, echo: 0.4 }); tone(f * 3.01, t, { dur: 0.5, g: 0.02 * v }); },
+    musicbox(f, t, v) { f *= 2; tone(f, t, { dur: 1.5, g: 0.12 * v, attack: 0.002, echo: 0.6 }); tone(f * 2, t, { dur: 0.45, g: 0.035 * v, attack: 0.002 }); tone(f * 4.02, t, { dur: 0.18, g: 0.018 * v, attack: 0.001 }); },
+    marimba(f, t, v) { f /= 2; tone(f, t, { dur: 1, g: 0.32 * v, attack: 0.003, echo: 0.35 }); tone(f * 3.99, t, { dur: 0.14, g: 0.1 * v, attack: 0.002 }); tone(f * 9.8, t, { dur: 0.05, g: 0.025 * v, attack: 0.001 }); },
+    synth(f, t, v) {
+      const o = track(ctx.createOscillator()), o2 = track(ctx.createOscillator());
+      o.type = 'sawtooth'; o.frequency.value = f; o2.type = 'square'; o2.frequency.value = f * 1.005;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 6;
+      lp.frequency.setValueAtTime(4200, t); lp.frequency.exponentialRampToValueAtTime(300, t + 0.4);
+      const a = ctx.createGain();
+      a.gain.setValueAtTime(0.0001, t); a.gain.exponentialRampToValueAtTime(0.07 * v, t + 0.01); a.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      o.connect(lp); o2.connect(lp); lp.connect(a); a.connect(master);
+      const s = ctx.createGain(); s.gain.value = 0.6; a.connect(s); s.connect(echoIn);
+      o.start(t); o2.start(t); o.stop(t + 0.55); o2.stop(t + 0.55);
+    }
+  };
+  const N = { C5: 523.25, D5: 587.33, E5: 659.25, G5: 783.99, A5: 880, C6: 1046.5, D6: 1174.66, E6: 1318.51, G6: 1567.98, C7: 2093 };
+  const SONGS = {
+    workDone: [[0, 'C5'], [0.15, 'E5'], [0.3, 'G5'], [0.45, 'C6'], [0.85, 'E6']],
+    breakDone: [[0, 'D5'], [0.13, 'G5'], [0.26, 'A5'], [0.39, 'D6'], [0.75, 'G6']],
+    win: [[0, 'C6'], [0.08, 'E6'], [0.16, 'G6'], [0.24, 'C7']],
+  };
+  function play(song, { instr = settings.sound, repeat = 1, at = 0, gap = 2.4 } = {}) {
+    if (!ensure()) return;
+    const t0 = ctx.currentTime + 0.05 + at, fn = INSTR[instr] || INSTR.glass;
+    for (let r = 0; r < repeat; r++) for (const [dt, n] of SONGS[song]) fn(N[n], t0 + r * gap + dt, r ? 0.7 : 1);
+  }
+  // The alarm is scheduled on the audio clock when the timer starts, so it rings
+  // on time even if Chrome throttles timers in a background tab.
+  function scheduleAlarm(song, delaySec) {
+    cancelAlarm();
+    if (!ensure()) return;
+    collect = [];
+    play(song, { repeat: 2, at: Math.max(0, delaySec) });
+    alarmNodes = collect; collect = null;
+  }
+  function cancelAlarm() {
+    alarmNodes.forEach(n => { try { n.stop(); } catch (e) {} try { n.disconnect(); } catch (e) {} });
+    alarmNodes = [];
+  }
+  function releaseAlarm() { const had = alarmNodes.length > 0; alarmNodes = []; return had; }
+
+  const ui = fn => (...args) => { if (!settings.uiSounds || muted || !ensure()) return; fn(ctx.currentTime, ...args); };
+  return {
+    ensure, setVolume, setMaster, play, scheduleAlarm, cancelAlarm, releaseAlarm,
+    blip: ui((t, f = 880) => tone(f, t, { dur: 0.09, type: 'triangle', g: 0.08 })),
+    click: ui(t => noise(t, { dur: 0.025, g: 0.12, type: 'highpass', freq: 3000 })),
+    clack: ui(t => { noise(t, { dur: 0.04, g: 0.16, type: 'bandpass', freq: 1800, q: 2 }); tone(220, t, { dur: 0.05, type: 'square', g: 0.02 }); }),
+    tick: ui(t => tone(2400, t, { dur: 0.02, type: 'square', g: 0.012 })),
+    quindar: ui(t => tone(2525, t, { dur: 0.25, g: 0.035, attack: 0.01 })), // the Apollo "beep" before CAPCOM talks
+    whoosh: ui(t => noise(t, { dur: 0.35, g: 0.07, freq: 1400, freqTo: 300, q: 1.2, attack: 0.03 })),
+    ignite: ui(t => { noise(t, { dur: 0.7, g: 0.14, type: 'lowpass', freq: 1400, freqTo: 250, q: 0.7, attack: 0.02 }); tone(95, t, { dur: 0.5, type: 'sawtooth', g: 0.025, slideTo: 55 }); }),
+    rumble: ui(t => { noise(t, { dur: 2.6, g: 0.18, type: 'lowpass', freq: 700, freqTo: 120, q: 0.6, attack: 0.15 }); noise(t, { dur: 1.2, g: 0.05, freq: 3000, freqTo: 800, q: 0.8, attack: 0.05 }); }),
+    buzz: ui(t => { tone(140, t, { dur: 0.35, type: 'square', g: 0.045 }); tone(147, t, { dur: 0.35, type: 'square', g: 0.03 }); }),
+    beep: ui((t, f = 880) => tone(f, t, { dur: 0.13, g: 0.08 })),
+    boing: ui(t => tone(380, t, { dur: 0.25, g: 0.09, slideTo: 980 })),
+    pop: ui(t => { noise(t, { dur: 0.18, g: 0.12, type: 'lowpass', freq: 900, freqTo: 120, q: 0.8 }); }),
+    sparkle: ui(t => { const ns = [1568, 1976, 2349, 2637, 3136]; for (let i = 0; i < 4; i++) tone(ns[(Math.random() * ns.length) | 0], t + i * 0.07, { dur: 0.5, g: 0.025, echo: 0.5 }); }),
+    meteor: ui(t => noise(t, { dur: 0.6, g: 0.06, freq: 3000, freqTo: 400, q: 1.5, attack: 0.02 })),
+    nova: ui(t => { noise(t, { dur: 0.5, g: 0.1, type: 'lowpass', freq: 1200, freqTo: 100, q: 0.7 }); tone(220, t, { dur: 1.2, g: 0.04, slideTo: 880, echo: 0.6 }); }),
+    ufo: ui(t => { // wobbly sci-fi theremin
+      const o = ctx.createOscillator(), lfo = ctx.createOscillator(), depth = ctx.createGain(), a = ctx.createGain();
+      o.frequency.setValueAtTime(500, t); o.frequency.exponentialRampToValueAtTime(1300, t + 1.1);
+      lfo.frequency.value = 9; depth.gain.value = 60; lfo.connect(depth); depth.connect(o.frequency);
+      a.gain.setValueAtTime(0.0001, t); a.gain.exponentialRampToValueAtTime(0.045, t + 0.05); a.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+      o.connect(a); a.connect(master); o.start(t); lfo.start(t); o.stop(t + 1.25); lfo.stop(t + 1.25);
+    }),
+  };
+})();
+
+/* ================= background: deep space ================= */
+const BG = (() => {
+  const cv = $('#bg'), c = cv.getContext('2d');
+  let W = 0, H = 0, dpr = 1, layer = null, stars = [];
+  let rockets = [], parts = [], meteors = [], sparks = [], rings = [], comets = [], flares = [], ufos = [], flashes = [];
+  let rgb = MODE_RGB.work.slice(), intensity = 0.3, last = performance.now();
+  let nextMeteor = performance.now() + 2500, nextFlare = performance.now() + 2000, lastFx = '';
+  const earth = { R: 0, x: 0, y: 0, rot: 0, land: [], clouds: [], orbits: [] };
+  const SUN = (() => { const v = [0.72, 0.42, 0.55], m = Math.hypot(...v); return v.map(x => x / m); })(); // sunlight comes from the right
+
+  // deterministic random, so the continents keep their shapes across window resizes
+  function seeded(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    W = innerWidth; H = innerHeight;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    build(); buildEarth();
+  }
+  function build() {
+    stars = [];
+    const n = Math.round(W * H / 2100);
+    for (let i = 0; i < n; i++) {
+      const z = Math.random() ** 1.8;
+      stars.push({ x: Math.random() * W, y: Math.random() * H, z, r: 0.6 + z * 1.5, tw: Math.random() * 6.28, ts: rand(0.6, 2.6),
+        col: Math.random() < 0.18 ? (Math.random() < 0.5 ? '255,214,170' : '170,200,255') : '255,255,255' });
+    }
+    layer = document.createElement('canvas');
+    layer.width = cv.width; layer.height = cv.height;
+    const s = layer.getContext('2d');
+    s.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const M = Math.max(W, H);
+    for (const [x, y, r, col, a] of [[W * 0.82, H * 0.12, M * 0.42, '130,80,210', 0.12], [W * 0.08, H * 0.8, M * 0.38, '40,110,210', 0.11], [W * 0.5, H * 0.45, M * 0.28, '210,90,150', 0.05]]) {
+      const g = s.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, `rgba(${col},${a})`); g.addColorStop(1, `rgba(${col},0)`);
+      s.fillStyle = g; s.fillRect(0, 0, W, H);
+    }
+  }
+
+  /* ---------- Earth, peeking up from the bottom-right corner ---------- */
+  function buildEarth() {
+    earth.R = Math.max(W, H) * 0.34; earth.x = W * 0.97; earth.y = H + earth.R * 0.58;
+    const rnd = seeded(42);
+    earth.land = []; earth.clouds = [];
+    for (let k = 0; k < 8; k++) { // continents = clusters of blobs at mid/high northern latitudes (the side facing us)
+      const lon = rnd() * Math.PI * 2, lat = 0.35 + rnd() * 0.75, n = 5 + ((rnd() * 6) | 0);
+      for (let j = 0; j < n; j++) earth.land.push({ lon: lon + (rnd() - 0.5) * 0.65, lat: lat + (rnd() - 0.5) * 0.32, s: 0.035 + rnd() * 0.07, hue: rnd(),
+        lights: Array.from({ length: 6 }, () => [(rnd() - 0.5) * 1.5, (rnd() - 0.5) * 1.5]) });
+    }
+    for (let k = 0; k < 34; k++) earth.clouds.push({ lon: rnd() * Math.PI * 2, lat: 0.2 + rnd() * 1.2, s: 0.025 + rnd() * 0.05 });
+    // orbits: r in Earth radii, inc = tilt toward us, node = rotation on screen
+    earth.orbits = [
+      { r: 1.055, inc: 0.95, node: 0.55, th: 0.3, type: 'iss' },
+      { r: 1.085, inc: 1.2, node: 1.0, th: 2.4, type: 'train' },
+      { r: 1.14, inc: 0.4, node: 0.2, th: 1.0, type: 'sat' },
+      { r: 1.2, inc: 1.35, node: 0.75, th: 4.2, type: 'sat' },
+      { r: 1.27, inc: 0.7, node: 1.25, th: 5.1, type: 'hubble' },
+      { r: 1.36, inc: 1.05, node: 0.35, th: 3.0, type: 'sat' },
+      { r: 1.48, inc: 0.25, node: 0.9, th: 0.8, type: 'sat' },
+      { r: 1.62, inc: 0.85, node: 1.4, th: 2.0, type: 'sat' },
+    ];
+    for (const o of earth.orbits) { o.speed = (Math.PI * 2 / 70) * Math.pow(1.055 / o.r, 1.5); o.glint = 0; } // Kepler: farther = slower
+  }
+  function sphere(lon, lat, rotMul = 1) { const l = lon + earth.rot * rotMul, cl = Math.cos(lat); return [cl * Math.sin(l), Math.sin(lat), cl * Math.cos(l)]; }
+  function drawEarth(dt) {
+    const { R, x: ex, y: ey } = earth;
+    if (!REDUCED) earth.rot += dt * 0.02; // one turn every ~5 minutes
+    const atm = c.createRadialGradient(ex, ey, R * 0.97, ex, ey, R * 1.12);
+    atm.addColorStop(0, 'rgba(110,180,255,.5)'); atm.addColorStop(1, 'rgba(110,180,255,0)');
+    c.fillStyle = atm; c.beginPath(); c.arc(ex, ey, R * 1.12, 0, 7); c.fill();
+    const oc = c.createRadialGradient(ex + R * 0.35, ey - R * 0.6, R * 0.1, ex, ey, R);
+    oc.addColorStop(0, '#3f86dc'); oc.addColorStop(0.6, '#1c4fa0'); oc.addColorStop(1, '#0d2657');
+    c.fillStyle = oc; c.beginPath(); c.arc(ex, ey, R, 0, 7); c.fill();
+    c.save(); c.beginPath(); c.arc(ex, ey, R, 0, 7); c.clip();
+    const night = [];
+    const onScreen = (sx, sy) => sx > -90 && sy > -90 && sx < W + 90 && sy < H + 90;
+    for (const b of earth.land) {
+      const [X, Y, Z] = sphere(b.lon, b.lat);
+      if (Z < 0.03) continue;
+      const sx = ex + R * X, sy = ey - R * Y;
+      if (!onScreen(sx, sy)) continue;
+      const lit = X * SUN[0] + Y * SUN[1] + Z * SUN[2];
+      const ang = Math.atan2(sy - ey, sx - ex), r1 = b.s * R * Math.max(0.12, Z), r2 = b.s * R; // squashed toward the limb
+      const k = 0.4 + 0.6 * clamp(lit + 0.35, 0, 1), col = b.hue < 0.62 ? [62, 136, 78] : [156, 134, 88];
+      c.fillStyle = `rgb(${col[0] * k | 0},${col[1] * k | 0},${col[2] * k | 0})`;
+      c.beginPath(); c.ellipse(sx, sy, r1, r2, ang, 0, 7); c.fill();
+      if (lit < 0.05) night.push([sx, sy, ang, r1, r2, b.lights, clamp(0.25 - lit * 3, 0, 1)]);
+    }
+    for (const b of earth.clouds) { // clouds drift a little faster than the ground
+      const [X, Y, Z] = sphere(b.lon, b.lat, 1.3);
+      if (Z < 0.03) continue;
+      const sx = ex + R * X, sy = ey - R * Y;
+      if (!onScreen(sx, sy)) continue;
+      const lit = X * SUN[0] + Y * SUN[1] + Z * SUN[2];
+      c.fillStyle = `rgba(255,255,255,${0.5 * clamp(lit + 0.45, 0.08, 1)})`;
+      c.beginPath(); c.ellipse(sx, sy, b.s * R * Math.max(0.12, Z), b.s * R * 2.3, Math.atan2(sy - ey, sx - ex), 0, 7); c.fill();
+    }
+    // night side
+    const m = Math.hypot(SUN[0], SUN[1]), lx = SUN[0] / m, ly = SUN[1] / m;
+    const sh = c.createLinearGradient(ex + lx * R, ey - ly * R, ex - lx * R, ey + ly * R);
+    sh.addColorStop(0, 'rgba(2,5,14,0)'); sh.addColorStop(0.4, 'rgba(2,5,14,0)'); sh.addColorStop(0.58, 'rgba(2,5,14,.72)'); sh.addColorStop(1, 'rgba(2,5,14,.9)');
+    c.fillStyle = sh; c.fillRect(ex - R, ey - R, 2 * R, 2 * R);
+    // city lights twinkle on the night side
+    c.globalCompositeOperation = 'lighter';
+    for (const [sx, sy, ang, r1, r2, lights, a] of night) {
+      const ca = Math.cos(ang), sa = Math.sin(ang);
+      for (const [u, v] of lights) {
+        const px = sx + u * r1 * ca - v * r2 * sa, py = sy + u * r1 * sa + v * r2 * ca;
+        c.fillStyle = `rgba(255,205,120,${0.75 * a})`; c.fillRect(px, py, 1.7, 1.7);
+      }
+    }
+    c.globalCompositeOperation = 'source-over';
+    c.restore();
+    c.strokeStyle = 'rgba(170,215,255,.32)'; c.lineWidth = 2; c.beginPath(); c.arc(ex, ey, R, 0, 7); c.stroke();
+  }
+
+  /* ---------- satellites in orbit ---------- */
+  function orbitPos(o, th) {
+    const r = o.r * earth.R, x = r * Math.cos(th), y0 = r * Math.sin(th);
+    const y = y0 * Math.cos(o.inc), z = y0 * Math.sin(o.inc);
+    const X = x * Math.cos(o.node) - y * Math.sin(o.node), Y = x * Math.sin(o.node) + y * Math.cos(o.node);
+    return [earth.x + X, earth.y - Y, z, Math.hypot(X, Y)];
+  }
+  const behind = (z, d) => z < 0 && d < earth.R; // hidden behind the planet
+  function drawOrbits(dt, t) {
+    for (const o of earth.orbits) {
+      if (!REDUCED) o.th += dt * o.speed * (0.6 + intensity * 0.6);
+      c.strokeStyle = 'rgba(170,200,255,.07)'; c.lineWidth = 1; c.beginPath();
+      let pen = false;
+      for (let i = 0; i <= 140; i++) {
+        const [x, y, z, d] = orbitPos(o, i / 140 * Math.PI * 2);
+        if (behind(z, d)) { pen = false; continue; }
+        pen ? c.lineTo(x, y) : c.moveTo(x, y); pen = true;
+      }
+      c.stroke();
+      const n = o.type === 'train' ? 10 : 1; // a "train" of freshly launched satellites
+      for (let k = 0; k < n; k++) {
+        const [x, y, z, d] = orbitPos(o, o.th - k * 0.016);
+        if (behind(z, d) || x < -30 || y < -30 || x > W + 30 || y > H + 30) continue;
+        if (o.type === 'train') { c.fillStyle = 'rgba(230,236,255,.85)'; c.fillRect(x - 1, y - 1, 2, 2); continue; }
+        if (o.type === 'iss') {
+          c.fillStyle = '#c9a54a'; for (const dx of [-10, -7.2, 4.8, 7.6]) c.fillRect(x + dx, y - 5.5, 2.4, 11);
+          c.fillStyle = '#dde2ec'; c.fillRect(x - 5, y - 1.3, 10, 2.6); c.fillRect(x - 1.1, y - 4, 2.2, 8);
+          if ((t * 1.1) % 1 < 0.1) { c.fillStyle = 'rgba(255,90,90,.95)'; c.beginPath(); c.arc(x + 5.5, y, 1.5, 0, 7); c.fill(); }
+          continue;
+        }
+        if (o.type === 'hubble') {
+          c.fillStyle = '#c4cad6'; c.fillRect(x - 4, y - 1.6, 8, 3.2);
+          c.fillStyle = 'rgba(80,130,220,.9)'; c.fillRect(x - 1, y - 6, 2, 3.5); c.fillRect(x - 1, y + 2.5, 2, 3.5);
+        } else {
+          c.fillStyle = '#cfd6e2'; c.fillRect(x - 1.6, y - 1.6, 3.2, 3.2);
+          c.fillStyle = 'rgba(80,130,220,.9)'; c.fillRect(x - 7, y - 0.8, 5, 1.6); c.fillRect(x + 2, y - 0.8, 5, 1.6);
+        }
+        // now and then a solar panel catches the sun (a "satellite flare")
+        if (o.glint <= 0 && Math.random() < dt * 0.06) o.glint = 0.8;
+        if (o.glint > 0) {
+          o.glint -= dt;
+          const a = Math.sin(o.glint / 0.8 * Math.PI);
+          c.globalCompositeOperation = 'lighter';
+          const g = c.createRadialGradient(x, y, 0, x, y, 12); g.addColorStop(0, `rgba(255,255,240,${a})`); g.addColorStop(1, 'rgba(255,255,240,0)');
+          c.fillStyle = g; c.beginPath(); c.arc(x, y, 12, 0, 7); c.fill();
+          c.globalCompositeOperation = 'source-over';
+        }
+      }
+    }
+  }
+
+  /* ---------- click surprises ---------- */
+  function launch(x, y, big = false) {
+    rockets.push({ x, y, vx: rand(-25, 25), vy: big ? -60 : -40, tilt: rand(-30, 30), big, t: 0 });
+  }
+  function burst(x, y, n = 20, power = 1) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, sp = rand(80, 340) * power;
+      sparks.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: rand(0.35, 0.85), white: Math.random() < 0.4 });
+    }
+    rings.push({ x, y, r: 4, life: 0.6, max: 0.6, speed: 240 * power });
+  }
+  function puff(x, y, n = 10) {
+    for (let i = 0; i < n; i++) parts.push({ x, y, vx: rand(-60, 60), vy: rand(-10, 40), life: rand(0.8, 1.6), max: 1.6, size: rand(4, 9), smoke: true });
+  }
+  function flare(x, y, size, opts = {}) { flares.push({ x, y, size, life: opts.life || 1.5, max: opts.life || 1.5, delay: opts.delay || 0, col: opts.col || '255,255,255', spin: rand(-0.6, 0.6) }); }
+  const FX = [['rocket', 22], ['meteors', 20], ['comet', 16], ['twinkle', 20], ['nova', 14], ['ufo', 8]];
+  function surprise(x, y) {
+    let fx;
+    do {
+      let r = Math.random() * 100; fx = 'rocket';
+      for (const [n, w] of FX) { if ((r -= w) < 0) { fx = n; break; } }
+    } while (fx === lastFx && Math.random() < 0.85);
+    lastFx = fx;
+    if (fx === 'rocket') { launch(x, y); puff(x, y + 6, 8); Snd.whoosh(); }
+    else if (fx === 'meteors') {
+      const dir = Math.random() < 0.5 ? 1 : -1, a = rand(0.45, 0.85), n = 3 + ((Math.random() * 4) | 0);
+      for (let i = 0; i < n; i++) { const sp = rand(380, 620); meteors.push({ x: x + rand(-40, 40), y: y + rand(-30, 30), vx: Math.cos(a) * sp * dir, vy: Math.sin(a) * sp, life: rand(0.55, 0.9), max: 0.9, delay: i * rand(0.06, 0.16), big: true }); }
+      Snd.meteor();
+    } else if (fx === 'comet') {
+      const a = Math.random() * Math.PI * 2, sp = rand(35, 60);
+      comets.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 6, max: 6, trail: [] });
+      Snd.sparkle();
+    } else if (fx === 'twinkle') {
+      flare(x, y, rand(18, 28), { life: 1.8 });
+      for (let i = 0; i < 9; i++) flare(x + rand(-100, 100), y + rand(-80, 80), rand(4, 10), { life: rand(1, 2), delay: rand(0.1, 0.9), col: pick(['255,255,255', '255,255,255', '190,210,255', '255,220,180']) });
+      Snd.sparkle();
+    } else if (fx === 'nova') {
+      ['255,120,190', '120,200,255', '255,210,120'].forEach((col, i) => rings.push({ x, y, r: 2, life: 1.3 + i * 0.25, max: 1.3 + i * 0.25, speed: 150 - i * 38, col, w: 3 - i * 0.7 }));
+      flashes.push({ x, y, life: 0.6, max: 0.6, r: 70 });
+      burst(x, y, 30, 0.8); Snd.nova();
+    } else {
+      ufos.push({ x, y, t: 0, dir: Math.random() < 0.5 ? -1 : 1, vx: 0, vy: 0 }); Snd.ufo();
+    }
+  }
+
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!W || !H) return;
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.clearRect(0, 0, W, H);
+    if (layer && layer.width && layer.height) c.drawImage(layer, 0, 0, W, H);
+    const t = now / 1000, [r, g, b] = rgb;
+
+    // stars drift left (faster while the timer runs, like we're cruising)
+    const drift = REDUCED ? 0 : 3 + intensity * 22;
+    for (const s of stars) {
+      s.x -= drift * (0.15 + s.z) * dt;
+      if (s.x < -2) { s.x = W + 2; s.y = Math.random() * H; }
+      const a = (0.25 + 0.75 * s.z) * (0.7 + 0.3 * Math.sin(t * s.ts + s.tw));
+      c.fillStyle = `rgba(${s.col},${a.toFixed(3)})`;
+      c.fillRect(s.x, s.y, s.r, s.r);
+    }
+    // every few seconds a random star flares up
+    if (!REDUCED && now > nextFlare) {
+      nextFlare = now + rand(2500, 6000);
+      const s = stars[(Math.random() * stars.length) | 0];
+      if (s) flare(s.x, s.y, rand(6, 11), { life: rand(1.2, 2), col: s.col });
+    }
+
+    drawEarth(dt);
+    drawOrbits(dt, t);
+
+    // meteors: ambient ones now and then, plus showers from clicks
+    if (!REDUCED && now > nextMeteor) {
+      nextMeteor = now + rand(3500, 9000) / (0.6 + intensity);
+      const ang = rand(0.25, 0.6) * (Math.random() < 0.5 ? 1 : -1) + Math.PI / 2;
+      meteors.push({ x: rand(W * 0.1, W * 0.9), y: rand(0, H * 0.4), vx: Math.cos(ang) * 600 * (Math.random() < 0.5 ? 1 : -1), vy: Math.abs(Math.sin(ang)) * 420, life: 0.9, max: 0.9 });
+    }
+    c.globalCompositeOperation = 'lighter';
+    for (let i = meteors.length - 1; i >= 0; i--) {
+      const m = meteors[i];
+      if (m.delay > 0) { m.delay -= dt; continue; }
+      m.life -= dt;
+      if (m.life <= 0) { if (m.big) burst(m.x, m.y, 6, 0.35); meteors.splice(i, 1); continue; }
+      m.x += m.vx * dt; m.y += m.vy * dt;
+      const a = Math.sin((m.life / m.max) * Math.PI), tl = m.big ? 0.16 : 0.14;
+      const gr = c.createLinearGradient(m.x, m.y, m.x - m.vx * tl, m.y - m.vy * tl);
+      gr.addColorStop(0, `rgba(255,255,255,${a})`); gr.addColorStop(0.3, `rgba(255,190,120,${a * 0.6})`); gr.addColorStop(1, 'rgba(255,140,80,0)');
+      c.strokeStyle = gr; c.lineWidth = m.big ? 2.4 : 1.6;
+      c.beginPath(); c.moveTo(m.x, m.y); c.lineTo(m.x - m.vx * tl, m.y - m.vy * tl); c.stroke();
+      if (m.big) {
+        const hg = c.createRadialGradient(m.x, m.y, 0, m.x, m.y, 7); hg.addColorStop(0, `rgba(255,250,230,${a})`); hg.addColorStop(1, 'rgba(255,200,140,0)');
+        c.fillStyle = hg; c.beginPath(); c.arc(m.x, m.y, 7, 0, 7); c.fill();
+        if (Math.random() < 0.5) sparks.push({ x: m.x, y: m.y, vx: rand(-40, 40), vy: rand(-40, 40), life: rand(0.2, 0.4), white: false });
+      }
+    }
+    // comets: curved dust tail along the path, straight blue ion tail pointing away from the sun
+    for (let i = comets.length - 1; i >= 0; i--) {
+      const k = comets[i]; k.life -= dt;
+      if (k.life <= 0) { comets.splice(i, 1); continue; }
+      k.x += k.vx * dt; k.y += k.vy * dt;
+      k.trail.push([k.x, k.y]); if (k.trail.length > 90) k.trail.shift();
+      const a = Math.min(1, Math.sin((k.life / k.max) * Math.PI) * 1.6);
+      for (let j = 1; j < k.trail.length; j++) {
+        const f = j / k.trail.length;
+        c.strokeStyle = `rgba(255,235,205,${0.35 * f * a})`; c.lineWidth = 1 + f * 7;
+        c.beginPath(); c.moveTo(k.trail[j - 1][0], k.trail[j - 1][1]); c.lineTo(k.trail[j][0], k.trail[j][1]); c.stroke();
+      }
+      const ix = k.x - SUN[0] * 150, iy = k.y + SUN[1] * 150;
+      const ig = c.createLinearGradient(k.x, k.y, ix, iy); ig.addColorStop(0, `rgba(120,190,255,${0.55 * a})`); ig.addColorStop(1, 'rgba(120,190,255,0)');
+      c.strokeStyle = ig; c.lineWidth = 2.2; c.beginPath(); c.moveTo(k.x, k.y); c.lineTo(ix, iy); c.stroke();
+      const hg = c.createRadialGradient(k.x, k.y, 0, k.x, k.y, 13); hg.addColorStop(0, `rgba(235,255,255,${a})`); hg.addColorStop(0.35, `rgba(150,230,255,${0.5 * a})`); hg.addColorStop(1, 'rgba(150,230,255,0)');
+      c.fillStyle = hg; c.beginPath(); c.arc(k.x, k.y, 13, 0, 7); c.fill();
+    }
+    c.globalCompositeOperation = 'source-over';
+
+    // rockets
+    for (let i = rockets.length - 1; i >= 0; i--) {
+      const k = rockets[i]; k.t += dt;
+      k.vy -= (k.big ? 330 : 240) * dt; k.vx += k.tilt * dt;
+      k.x += k.vx * dt; k.y += k.vy * dt;
+      if (k.y < -80 || k.x < -80 || k.x > W + 80) { rockets.splice(i, 1); continue; }
+      const ang = Math.atan2(k.vy, k.vx), sz = k.big ? 1.8 : 1;
+      const tx = k.x - Math.cos(ang) * 9 * sz, ty = k.y - Math.sin(ang) * 9 * sz;
+      for (let j = 0; j < (k.big ? 4 : 2); j++) {
+        parts.push({ x: tx, y: ty, vx: -Math.cos(ang) * rand(60, 160) + rand(-25, 25), vy: -Math.sin(ang) * rand(60, 160) + rand(-25, 25), life: rand(0.2, 0.45), max: 0.45, size: rand(1.5, 3) * sz, smoke: false });
+        if (Math.random() < 0.5) parts.push({ x: tx, y: ty, vx: rand(-20, 20), vy: rand(-5, 25), life: rand(0.8, 1.8), max: 1.8, size: rand(2, 5) * sz, smoke: true });
+      }
+      k.ang = ang;
+    }
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i]; p.life -= dt;
+      if (p.life <= 0) { parts.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.97; p.vy *= 0.97;
+      if (p.smoke) {
+        const a = 0.22 * (p.life / p.max), sz = p.size * (1 + (1 - p.life / p.max) * 2.5);
+        c.fillStyle = `rgba(170,178,195,${a.toFixed(3)})`; c.beginPath(); c.arc(p.x, p.y, sz, 0, 7); c.fill();
+      }
+    }
+    c.globalCompositeOperation = 'lighter';
+    for (const p of parts) {
+      if (p.smoke) continue;
+      const a = p.life / p.max;
+      c.fillStyle = a > 0.6 ? `rgba(255,240,200,${a})` : `rgba(${r},${g},${b},${a})`;
+      c.beginPath(); c.arc(p.x, p.y, p.size * (0.5 + a), 0, 7); c.fill();
+    }
+    c.globalCompositeOperation = 'source-over';
+    for (const k of rockets) {
+      const sz = k.big ? 1.8 : 1;
+      c.save(); c.translate(k.x, k.y); c.rotate(k.ang + Math.PI / 2); c.scale(sz, sz);
+      c.fillStyle = '#ff5d5d';
+      c.beginPath(); c.moveTo(-3.5, 4); c.lineTo(-7, 10); c.lineTo(-3.5, 9); c.closePath(); c.fill();
+      c.beginPath(); c.moveTo(3.5, 4); c.lineTo(7, 10); c.lineTo(3.5, 9); c.closePath(); c.fill();
+      c.fillStyle = '#eef2f7';
+      c.beginPath(); c.moveTo(0, -11); c.quadraticCurveTo(4.5, -5, 3.8, 9); c.lineTo(-3.8, 9); c.quadraticCurveTo(-4.5, -5, 0, -11); c.fill();
+      c.fillStyle = '#7cc4ff'; c.beginPath(); c.arc(0, -2, 1.7, 0, 7); c.fill();
+      c.restore();
+    }
+
+    // UFO: hovers with a tractor beam for a moment, then zips away
+    for (let i = ufos.length - 1; i >= 0; i--) {
+      const u = ufos[i]; u.t += dt;
+      if (u.t > 0.9) { u.vx += u.dir * 700 * dt; u.vy -= 160 * dt; }
+      u.x += u.vx * dt; u.y += u.vy * dt + (u.t > 0.9 ? Math.sin(u.t * 16) * 1.6 : Math.sin(u.t * 7) * 0.4);
+      if (u.x < -60 || u.x > W + 60 || u.y < -60) { ufos.splice(i, 1); continue; }
+      c.save(); c.translate(u.x, u.y); c.rotate(clamp(u.vx * 0.0012, -0.4, 0.4));
+      if (u.t < 0.9) {
+        const ba = Math.sin(u.t / 0.9 * Math.PI) * 0.5;
+        const bg = c.createLinearGradient(0, 0, 0, 60); bg.addColorStop(0, `rgba(160,255,200,${ba})`); bg.addColorStop(1, 'rgba(160,255,200,0)');
+        c.fillStyle = bg; c.beginPath(); c.moveTo(-5, 3); c.lineTo(5, 3); c.lineTo(18, 60); c.lineTo(-18, 60); c.closePath(); c.fill();
+      }
+      c.fillStyle = 'rgba(140,230,255,.75)'; c.beginPath(); c.ellipse(0, -3, 6, 5, 0, Math.PI, 0); c.fill();
+      const hull = c.createLinearGradient(0, -4, 0, 4); hull.addColorStop(0, '#e6eaf2'); hull.addColorStop(1, '#7d8696');
+      c.fillStyle = hull; c.beginPath(); c.ellipse(0, 0, 15, 4.5, 0, 0, 7); c.fill();
+      for (let j = 0; j < 5; j++) { c.fillStyle = ['#ff6b6b', '#ffd36b', '#7dffb0', '#58c6ff', '#d59bff'][(j + Math.floor(u.t * 8)) % 5]; c.fillRect(-10 + j * 5, 0.5, 2, 2); }
+      c.restore();
+    }
+
+    // sparks, rings, flashes and star flares
+    c.globalCompositeOperation = 'lighter';
+    const drag = Math.pow(0.04, dt);
+    c.lineWidth = 1.8;
+    for (let i = sparks.length - 1; i >= 0; i--) {
+      const s = sparks[i]; s.life -= dt;
+      if (s.life <= 0) { sparks.splice(i, 1); continue; }
+      s.vx *= drag; s.vy = s.vy * drag + 120 * dt;
+      s.x += s.vx * dt; s.y += s.vy * dt;
+      const a = Math.min(1, s.life * 2.2);
+      c.strokeStyle = s.white ? `rgba(255,255,245,${a})` : `rgba(${r},${g},${b},${a})`;
+      c.beginPath(); c.moveTo(s.x, s.y); c.lineTo(s.x - s.vx * 0.035, s.y - s.vy * 0.035); c.stroke();
+    }
+    for (let i = rings.length - 1; i >= 0; i--) {
+      const R = rings[i]; R.life -= dt;
+      if (R.life <= 0) { rings.splice(i, 1); continue; }
+      R.r += R.speed * dt;
+      c.strokeStyle = `rgba(${R.col || `${r},${g},${b}`},${0.6 * R.life / R.max})`; c.lineWidth = R.w || 2;
+      c.beginPath(); c.arc(R.x, R.y, R.r, 0, 7); c.stroke();
+    }
+    for (let i = flashes.length - 1; i >= 0; i--) {
+      const f = flashes[i]; f.life -= dt;
+      if (f.life <= 0) { flashes.splice(i, 1); continue; }
+      const a = f.life / f.max, fg = c.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r * (1.4 - a * 0.4));
+      fg.addColorStop(0, `rgba(255,255,255,${a})`); fg.addColorStop(0.3, `rgba(255,200,230,${a * 0.5})`); fg.addColorStop(1, 'rgba(255,200,230,0)');
+      c.fillStyle = fg; c.beginPath(); c.arc(f.x, f.y, f.r * 1.4, 0, 7); c.fill();
+    }
+    for (let i = flares.length - 1; i >= 0; i--) {
+      const f = flares[i];
+      if (f.delay > 0) { f.delay -= dt; continue; }
+      f.life -= dt;
+      if (f.life <= 0) { flares.splice(i, 1); continue; }
+      const k = Math.sin((1 - f.life / f.max) * Math.PI), L = f.size * k * 2;
+      c.save(); c.translate(f.x, f.y); c.rotate(f.spin * (1 - f.life / f.max));
+      for (const [ax, ay, len] of [[1, 0, L], [0, 1, L], [0.707, 0.707, L * 0.45], [0.707, -0.707, L * 0.45]]) {
+        const sg = c.createLinearGradient(-ax * len, -ay * len, ax * len, ay * len);
+        sg.addColorStop(0, `rgba(${f.col},0)`); sg.addColorStop(0.5, `rgba(${f.col},${k})`); sg.addColorStop(1, `rgba(${f.col},0)`);
+        c.strokeStyle = sg; c.lineWidth = 1.3; c.beginPath(); c.moveTo(-ax * len, -ay * len); c.lineTo(ax * len, ay * len); c.stroke();
+      }
+      const rg = c.createRadialGradient(0, 0, 0, 0, 0, f.size * 0.6 * k + 1); rg.addColorStop(0, `rgba(${f.col},${k})`); rg.addColorStop(1, `rgba(${f.col},0)`);
+      c.fillStyle = rg; c.beginPath(); c.arc(0, 0, f.size * 0.6 * k + 1, 0, 7); c.fill();
+      c.restore();
+    }
+    c.globalCompositeOperation = 'source-over';
+  }
+  let rt;
+  return {
+    init() { resize(); addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(resize, 150); }); requestAnimationFrame(frame); },
+    setColor(c3) { rgb = c3.slice(); },
+    setIntensity(v) { intensity = v; },
+    burst, launch, puff, surprise,
+  };
+})();
+
+/* ================= seven-segment display ================= */
+const Seven = (() => {
+  const host = $('#sevenSeg');
+  const hs = (x1, x2, y, t = 5) => `${x1},${y} ${x1 + t},${y - t} ${x2 - t},${y - t} ${x2},${y} ${x2 - t},${y + t} ${x1 + t},${y + t}`;
+  const vs = (x, y1, y2, t = 5) => `${x},${y1} ${x + t},${y1 + t} ${x + t},${y2 - t} ${x},${y2} ${x - t},${y2 - t} ${x - t},${y1 + t}`;
+  const SEG = { a: hs(8, 52, 6), b: vs(54, 8, 53), c: vs(54, 57, 102), d: hs(8, 52, 104), e: vs(6, 57, 102), f: vs(6, 8, 53), g: hs(8, 52, 55) };
+  const MAP = ['abcdef', 'bc', 'abdeg', 'abcdg', 'bcfg', 'acdfg', 'acdefg', 'abc', 'abcdefg', 'abcdfg'];
+  const X = [0, 72, 160, 232];
+  let svg = '<svg viewBox="0 -3 312 116" aria-hidden="true"><g transform="translate(14 0) skewX(-7)">';
+  X.forEach((x, i) => { svg += `<g transform="translate(${x} 0)" data-d="${i}">`; for (const k in SEG) svg += `<polygon class="seg" data-s="${k}" points="${SEG[k]}"/>`; svg += '</g>'; });
+  svg += '<circle class="seg colon" cx="144" cy="35" r="6"/><circle class="seg colon" cx="144" cy="76" r="6"/></g></svg>';
+  host.innerHTML = svg;
+  const digits = X.map((_, i) => $$(`[data-d="${i}"] .seg`, host));
+  const colon = $$('.colon', host);
+  const cur = [-1, -1, -1, -1];
+  let colonOn = null;
+  return {
+    set(str) {
+      for (let i = 0; i < 4; i++) {
+        const n = +str[i]; if (cur[i] === n) continue; cur[i] = n;
+        digits[i].forEach(p => p.classList.toggle('on', MAP[n].includes(p.dataset.s)));
+      }
+    },
+    colon(on) { if (on === colonOn) return; colonOn = on; colon.forEach(c => c.classList.toggle('on', on)); }
+  };
+})();
+
+/* ================= timer state ================= */
+const durMs = m => settings[m] * 60000;
+const S = { mode: 'work', running: false, endAt: 0, remaining: durMs('work'), cycle: 0 };
+{ const sc = store.get('cycle', null); if (sc && sc.date === todayKey()) S.cycle = sc.n | 0; }
+const saveCycle = () => store.set('cycle', { date: todayKey(), n: S.cycle });
+
+let stats = store.get('stats', null);
+if (!stats || stats.date !== todayKey()) stats = { date: todayKey(), count: 0, minutes: 0 };
+function renderStats() { $('#todayStats').innerHTML = `🚀 <b>${stats.count}</b> ${stats.count === 1 ? 'pomodoro' : 'pomodoros'} · ${stats.minutes} min today`; }
+function bumpStats(min) {
+  if (stats.date !== todayKey()) stats = { date: todayKey(), count: 0, minutes: 0 };
+  stats.count++; stats.minutes += min; store.set('stats', stats); renderStats();
+}
+
+/* ================= Rocky ================= */
+const Rocky = (() => {
+  const el = $('#rocky'), bubble = $('#bubble');
+  let hold = 0, holdT, clicks = 0, clickT;
+  const face = f => { el.dataset.face = f; };
+  function mood() {
+    if (Date.now() < hold) return;
+    face(S.running ? (S.mode === 'work' ? 'focus' : 'break') : 'idle');
+    el.classList.toggle('lit', S.running && S.mode === 'work');
+    el.classList.toggle('float', S.running && S.mode !== 'work');
+  }
+  function say(t) { bubble.textContent = t; bubble.classList.remove('pop'); void bubble.offsetWidth; bubble.classList.add('pop'); }
+  function excite(ms = 4000) {
+    hold = Date.now() + ms; face('happy'); el.classList.add('lit'); el.classList.remove('float');
+    clearTimeout(holdT); holdT = setTimeout(() => { hold = 0; mood(); }, ms);
+  }
+  function bounce() { el.classList.remove('bounce'); void el.offsetWidth; el.classList.add('bounce'); }
+  el.addEventListener('animationend', e => { if (e.animationName === 'swing') el.classList.remove('bounce'); });
+  el.addEventListener('click', () => {
+    bounce(); clicks++;
+    clearTimeout(clickT); clickT = setTimeout(() => { clicks = 0; }, 1600);
+    if (clicks >= 5) {
+      clicks = 0; say(pick(TICKLE)); excite(1800);
+      const r = el.getBoundingClientRect(); BG.launch(r.left + r.width * 0.38, r.top + r.height * 0.4, false); Snd.whoosh();
+    } else {
+      Snd.boing();
+      say(Math.random() < 0.4 ? pick(FUN_FACTS) : pick(S.running && S.mode !== 'work' ? BREAK_TIPS : ENCOURAGE));
+    }
+  });
+  return { mood, say, excite, bounce };
+})();
+
+/* ================= CAPCOM quote screen ================= */
+const CRT = (() => {
+  const N = QUOTES.length;
+  const tEl = $('#crtText'), aEl = $('#crtAuthor'), kEl = $('#crtKind'), bar = $('#crtBar');
+  const numEl = $('#crtNum'), seenEl = $('#crtSeen'), skipEl = $('#crtSkip');
+  let cur = -1, typer;
+  // "seen" lasts for this tab's session: it survives a refresh and resets when the tab is closed
+  let seen = new Set();
+  try { (JSON.parse(sessionStorage.getItem('apollodoro.seen')) || []).forEach(i => { if (i >= 0 && i < N) seen.add(i); }); } catch (e) {}
+  const saveSeen = () => { try { sessionStorage.setItem('apollodoro.seen', JSON.stringify([...seen])); } catch (e) {} };
+  $('#crtTotal').textContent = N; numEl.max = N;
+  skipEl.checked = store.get('skipSeen', true);
+  skipEl.addEventListener('change', () => { store.set('skipSeen', skipEl.checked); Snd.click(); });
+  function byline(who, note) {
+    aEl.innerHTML = '';
+    const w = document.createElement('span'); w.className = 'who'; w.textContent = '— ' + who;
+    aEl.append(w, note ? ` (${note})` : '');
+  }
+  function show(i) {
+    cur = i; seen.add(i); saveSeen();
+    numEl.value = i + 1; seenEl.textContent = `${seen.size}/${N}`;
+    const [kind, text, who, note] = QUOTES[i];
+    clearInterval(typer); aEl.textContent = '';
+    const full = kind === 'q' ? `“${text}”` : text;
+    kEl.textContent = kind === 'f' ? '★ MISSION FILE' : '';
+    if (REDUCED) { tEl.textContent = full; byline(who, note); return; }
+    let k = 0; tEl.textContent = '';
+    typer = setInterval(() => {
+      k += 1; tEl.textContent = full.slice(0, k);
+      if (k >= full.length) { clearInterval(typer); byline(who, note); }
+    }, 22);
+  }
+  function restartBar() {
+    bar.classList.remove('run'); void bar.offsetWidth;
+    if (!settings.quoteSec) return;
+    bar.style.animationDuration = settings.quoteSec + 's'; bar.classList.add('run');
+  }
+  function go(i) { show(((i % N) + N) % N); restartBar(); }
+  // random pick for clicks + auto-rotation; with "skip seen" on, every entry shows once before any repeats
+  function randomPick() {
+    let pool = [...Array(N).keys()].filter(i => i !== cur && !(skipEl.checked && seen.has(i)));
+    if (!pool.length) {
+      seen = new Set(cur >= 0 ? [cur] : []);
+      toast(`You’ve seen all ${N}! Starting a fresh shuffle ✨`);
+      pool = [...Array(N).keys()].filter(i => i !== cur);
+    }
+    return pool[(Math.random() * pool.length) | 0];
+  }
+  const random = () => go(randomPick());
+  bar.addEventListener('animationend', random);
+  $('#crt').addEventListener('click', () => { Snd.quindar(); random(); });
+  $('#crtNext').addEventListener('click', () => { Snd.click(); go(cur + 1); });
+  $('#crtPrev').addEventListener('click', () => { Snd.click(); go(cur - 1); });
+  numEl.addEventListener('change', () => {
+    const n = Math.round(+numEl.value);
+    if (n >= 1 && n <= N) { Snd.click(); go(n - 1); } else numEl.value = cur + 1;
+  });
+  numEl.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'Escape') numEl.blur(); });
+  return { next: random, restartBar };
+})();
+
+/* ================= dial ================= */
+const RING_C = 2 * Math.PI * 140;
+const prog = $('#prog'), headG = $('#headG'), statusEl = $('#statusText'), chargeEl = $('#chargeText');
+prog.style.strokeDasharray = RING_C;
+(() => {
+  const g = $('#ticks'), NS = 'http://www.w3.org/2000/svg';
+  for (let i = 0; i < 60; i++) {
+    const a = i * Math.PI / 30, maj = i % 5 === 0, r1 = maj ? 149 : 152, r2 = 157;
+    const l = document.createElementNS(NS, 'line');
+    l.setAttribute('x1', 170 + Math.sin(a) * r1); l.setAttribute('y1', 170 - Math.cos(a) * r1);
+    l.setAttribute('x2', 170 + Math.sin(a) * r2); l.setAttribute('y2', 170 - Math.cos(a) * r2);
+    l.setAttribute('class', maj ? 'tick major' : 'tick');
+    g.appendChild(l);
+  }
+})();
+
+let baseTitle = document.title, flashT = null;
+function setTitle(t) { baseTitle = t; if (!flashT) document.title = t; }
+function alertTitle(msg) {
+  if (!document.hidden) return;
+  clearInterval(flashT); let on = false;
+  flashT = setInterval(() => { on = !on; document.title = on ? msg : baseTitle; }, 1000);
+}
+
+let lastSec = -1, lastCharge = '', lastStatus = '';
+function render() {
+  const total = durMs(S.mode), rem = Math.max(0, S.remaining);
+  const secs = Math.ceil(rem / 1000);
+  if (secs !== lastSec) {
+    lastSec = secs;
+    const m = Math.min(99, Math.floor(secs / 60)), s = secs % 60;
+    Seven.set(pad(m) + pad(s));
+    setTitle(`${S.running ? '🚀 ' : ''}${pad(m)}:${pad(s)} · ${MODE_NAME[S.mode]} — Apollodoro`);
+  }
+  Seven.colon(!S.running || rem % 1000 > 500);
+  const elapsed = clamp(1 - rem / total, 0, 1);
+  const frac = S.mode === 'work' ? elapsed : 1 - elapsed; // focus climbs to orbit, breaks count down
+  prog.style.strokeDashoffset = RING_C * (1 - frac);
+  headG.style.transform = `rotate(${frac * 360}deg)`;
+  const ch = S.mode === 'work' ? `ALT ${Math.round(frac * 408)} km · ${Math.round(frac * 100)}% to ISS` : `COAST · ${Math.round(frac * 100)}% left`;
+  if (ch !== lastCharge) { lastCharge = ch; chargeEl.textContent = ch; }
+  const st = S.running ? ({ work: 'ASCENT', short: 'COASTING', long: 'IN ORBIT' })[S.mode] : (rem >= total ? (S.mode === 'work' ? 'GO FOR LAUNCH' : 'READY') : 'HOLD');
+  if (st !== lastStatus) { lastStatus = st; statusEl.textContent = st; }
+}
+
+const ICON = {
+  play: '<svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>',
+  pause: '<svg viewBox="0 0 24 24"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z" fill="currentColor"/></svg>',
+  vol: '<svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>',
+  mute: '<svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M23 9l-6 6M17 9l6 6"/></svg>',
+};
+function renderButton() {
+  const b = $('#startBtn');
+  b.innerHTML = S.running ? ICON.pause + '<span>Pause</span>' : ICON.play + `<span>${S.remaining < durMs(S.mode) ? 'Resume' : (S.mode === 'work' ? 'Launch' : 'Start')}</span>`;
+  b.setAttribute('aria-label', S.running ? 'Pause (Space)' : 'Start (Space)');
+}
+
+let leds = [];
+function buildLeds() {
+  const w = $('#cycleLeds'); w.innerHTML = ''; leds = [];
+  for (let i = 0; i < settings.interval; i++) { const d = document.createElement('span'); d.className = 'led'; w.appendChild(d); leds.push(d); }
+  renderLeds();
+}
+function renderLeds() {
+  const n = settings.interval, lit = S.cycle === 0 ? 0 : ((S.cycle - 1) % n) + 1;
+  leds.forEach((l, i) => l.classList.toggle('on', i < lit));
+  $('#cycleLabel').textContent = lit >= n ? 'long break earned!' : `${n - lit} to long break`;
+}
+
+let nextEnc = 0, nextIdleChat = Date.now() + rand(2, 3) * 60000;
+function scheduleEnc() { nextEnc = Date.now() + (S.mode === 'work' ? rand(3, 6) : rand(1.5, 3)) * 60000; }
+
+function afterStateChange() {
+  document.body.classList.toggle('running', S.running);
+  BG.setIntensity(S.running ? 1 : 0.3);
+  Rocky.mood(); renderButton();
+  lastSec = -1; render();
+}
+const songFor = mode => mode === 'work' ? 'workDone' : 'breakDone';
+
+function start(opts = {}) {
+  if (S.running) return;
+  Snd.ensure();
+  const total = durMs(S.mode);
+  if (S.remaining <= 0) S.remaining = total;
+  const fresh = S.remaining >= total;
+  S.endAt = Date.now() + S.remaining; S.running = true;
+  Snd.scheduleAlarm(songFor(S.mode), S.remaining / 1000);
+  afterStateChange(); scheduleEnc();
+  if (!opts.quiet) {
+    if (S.mode === 'work') Snd.ignite(); else Snd.whoosh();
+    Rocky.say(fresh ? pick(S.mode === 'work' ? START_WORK : START_BREAK) : pick(RESUME_MSGS));
+  }
+}
+function pause() {
+  if (!S.running) return;
+  S.remaining = Math.max(0, S.endAt - Date.now()); S.running = false;
+  Snd.cancelAlarm(); afterStateChange(); Snd.pop(); Rocky.say(pick(PAUSE_MSGS));
+}
+const toggle = () => S.running ? pause() : start();
+function reset() { Snd.cancelAlarm(); S.running = false; S.remaining = durMs(S.mode); afterStateChange(); Snd.click(); }
+function setMode(m) {
+  Snd.cancelAlarm();
+  S.mode = m; S.running = false; S.remaining = durMs(m);
+  document.body.dataset.mode = m; BG.setColor(MODE_RGB[m]);
+  $$('.mode-switch button').forEach(b => { const on = b.dataset.mode === m; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+  renderLeds(); afterStateChange();
+}
+function skip() {
+  const was = S.mode;
+  if (was === 'long') S.cycle = 0;
+  saveCycle();
+  setMode(was === 'work' ? 'short' : 'work');
+  Snd.click();
+  Rocky.say(was === 'work' ? 'Early engine cutoff — skipping to a break. No judgement. ☕' : 'Break skipped — straight back to the launch pad!');
+}
+function celebrate(msg) {
+  const r = $('.dial-wrap').getBoundingClientRect();
+  BG.launch(r.left + r.width / 2, r.top + r.height / 2, true);
+  BG.burst(r.left + r.width / 2, r.top + r.height / 2, 50, 1.6);
+  const f = $('#flash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+  Rocky.excite(5000); Rocky.bounce(); Rocky.say(msg); toast(msg);
+}
+function complete() {
+  const was = S.mode, overshoot = Math.max(0, Date.now() - S.endAt);
+  S.running = false; S.remaining = 0;
+  if (!Snd.releaseAlarm()) Snd.play(songFor(was), { repeat: 2 }); // fallback if the scheduled alarm wasn't set
+  let next;
+  if (was === 'work') { S.cycle++; bumpStats(settings.work); next = S.cycle % settings.interval === 0 ? 'long' : 'short'; }
+  else { next = 'work'; if (was === 'long') S.cycle = 0; }
+  saveCycle();
+  const msg = was === 'work' ? (next === 'long' ? pick(LONG_EARNED) : pick(WORK_DONE)) : pick(BREAK_DONE);
+  alertTitle(was === 'work' ? '🚀 Break time!' : '🚀 Back to work!');
+  setMode(next);
+  celebrate(msg);
+  if (next === 'work' ? settings.autoWork : settings.autoBreak) {
+    S.remaining = Math.max(1000, durMs(next) - overshoot);
+    start({ quiet: true });
+  }
+}
+function tick() {
+  if (S.running) {
+    S.remaining = Math.max(0, S.endAt - Date.now());
+    if (S.remaining <= 0) { complete(); return; }
+    if (settings.encourage && Date.now() > nextEnc) { Rocky.say(pick(S.mode === 'work' ? ENCOURAGE : BREAK_TIPS)); scheduleEnc(); }
+  } else if (settings.encourage && Date.now() > nextIdleChat) {
+    Rocky.say(pick(FUN_FACTS)); nextIdleChat = Date.now() + rand(3, 5) * 60000;
+  }
+  render();
+}
+setInterval(tick, 200);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { if (flashT) { clearInterval(flashT); flashT = null; document.title = baseTitle; } tick(); }
+});
+
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3800); }
+
+/* ================= shared fidget helpers ================= */
+function Knob(el, { min, max, value, onChange }) {
+  const dial = el.querySelector('.knob-dial');
+  let v = value, lastDet = null, drag = false, sx = 0, sy = 0, sv = 0;
+  el.setAttribute('aria-valuemin', min); el.setAttribute('aria-valuemax', max);
+  function set(nv, silent) {
+    v = clamp(nv, min, max);
+    const n = (v - min) / (max - min);
+    dial.style.transform = `rotate(${-135 + 270 * n}deg)`;
+    const det = Math.round(n * 20);
+    if (!silent && det !== lastDet) Snd.tick();
+    lastDet = det;
+    el.setAttribute('aria-valuenow', v.toFixed(2));
+    onChange(v);
+  }
+  el.addEventListener('pointerdown', e => { drag = true; sx = e.clientX; sy = e.clientY; sv = v; el.setPointerCapture(e.pointerId); el.classList.add('grab'); });
+  el.addEventListener('pointermove', e => { if (drag) set(sv + ((sy - e.clientY) + (e.clientX - sx)) / 160 * (max - min)); });
+  const end = () => { drag = false; el.classList.remove('grab'); };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  el.addEventListener('wheel', e => { e.preventDefault(); set(v - Math.sign(e.deltaY) * (max - min) / 30); }, { passive: false });
+  el.addEventListener('keydown', e => {
+    const step = (max - min) / 20;
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { set(v + step); e.preventDefault(); }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { set(v - step); e.preventDefault(); }
+  });
+  set(value, true);
+  return { set };
+}
+function whenVisible(el, cb) {
+  if (!('IntersectionObserver' in window)) { cb(true); return; }
+  new IntersectionObserver(es => es.forEach(e => cb(e.isIntersecting))).observe(el);
+}
+// sizes a canvas to its CSS box (crisp on hi-dpi) and reports the size in CSS pixels
+function fitCanvas(cv, ctx, onSize) {
+  const doFit = () => {
+    const r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
+    if (!r.width) return;
+    cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    onSize(r.width, r.height);
+  };
+  if ('ResizeObserver' in window) new ResizeObserver(doFit).observe(cv); else addEventListener('resize', doFit);
+  doFit();
+}
+
+/* ================= rocket nozzle lab =================
+   The textbook 1-D isentropic nozzle model rocket engineers start from:
+   bell expansion ratio ε → exit Mach (area–Mach relation) → exit pressure → thrust coefficient Cf.
+   Chamber temperature and exhaust molar mass give c* (characteristic velocity), and
+   Isp = Cf × c-star ÷ g₀ with ~5% real-world losses. The presets land within a few % of the real engines.
+   The plume's look follows exit pressure vs. outside pressure: pinched with shock diamonds when
+   overexpanded, ballooning when underexpanded, wide and diamond-free in vacuum. */
+(() => {
+  const cv = $('#nozzle'), c = cv.getContext('2d');
+  let W = 0, H = 0, visible = true, last = performance.now(), level = 1;
+  const PROPS = [
+    { name: 'RP-1 / LOX', g: 1.22, M: 22, T: [2700, 3700], body: [255, 150, 50], core: [255, 240, 195], dia: [255, 250, 220], glow: [255, 100, 30], alpha: 0.9, len: 1, sparks: true, soot: true },
+    { name: 'LH2 / LOX', g: 1.2, M: 12, T: [3000, 3600], body: [120, 140, 255], core: [215, 225, 255], dia: [255, 175, 235], glow: [90, 110, 255], alpha: 0.3, len: 0.9 },
+    { name: 'CH4 / LOX', g: 1.2, M: 20, T: [2800, 3700], body: [100, 110, 255], core: [230, 210, 255], dia: [255, 190, 255], glow: [150, 85, 255], alpha: 0.6, len: 0.95 },
+    { name: 'SOLID (APCP)', g: 1.18, M: 28, T: [2800, 3500], body: [255, 205, 125], core: [255, 255, 240], dia: [255, 255, 235], glow: [255, 165, 75], alpha: 0.95, len: 1.15, smoke: true },
+  ];
+  const PRESETS = [
+    { name: 'Merlin 1D', prop: 0, pc: 97, eps: 16, alt: 0, temp: 0.9, note: 'Falcon 9 booster engine · real Isp ≈ 282 s at sea level' },
+    { name: 'RS-25', prop: 1, pc: 206, eps: 69, alt: 0, temp: 1, note: 'Space Shuttle / SLS · real Isp ≈ 366 s sea level, 452 s vacuum' },
+    { name: 'Raptor 2', prop: 2, pc: 300, eps: 34, alt: 0, temp: 0.9, note: 'Starship · real Isp ≈ 327 s at sea level' },
+    { name: 'RL10A-4', prop: 1, pc: 42, eps: 84, alt: 100, temp: 0.8, note: 'Centaur upper stage · real Isp ≈ 450 s in vacuum' },
+    { name: 'Shuttle SRB', prop: 3, pc: 62, eps: 7.5, alt: 0, temp: 0.86, note: 'solid rocket booster · real Isp ≈ 242 s at sea level' },
+  ];
+  let prop = 0, pc = 97, eps = 16, alt = 0, temp = 0.9, on = true, shake = 0, preset = 0, applying = false;
+  const parts = [];
+  const read = $('#nzRead'), regEl = $('#nzRegime'), hintEl = $('#nzHint');
+
+  const areaRatio = (M, g) => (1 / M) * Math.pow((2 / (g + 1)) * (1 + (g - 1) / 2 * M * M), (g + 1) / (2 * (g - 1)));
+  function machFromArea(e, g) {
+    let lo = 1.0001, hi = 15;
+    for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (areaRatio(mid, g) > e) hi = mid; else lo = mid; }
+    return (lo + hi) / 2;
+  }
+  function state() {
+    const P = PROPS[prop], g = P.g, Me = machFromArea(eps, g);
+    const pr = Math.pow(1 + (g - 1) / 2 * Me * Me, -g / (g - 1));
+    const Pe = pc * pr, Pa = 1.01325 * Math.exp(-alt / 8.5), ratio = Pe / Pa;
+    const cfm = Math.sqrt((2 * g * g / (g - 1)) * Math.pow(2 / (g + 1), (g + 1) / (g - 1)) * (1 - Math.pow(pr, (g - 1) / g)));
+    const Cf = cfm + eps * (Pe - Pa) / pc;
+    const T = lerp(P.T[0], P.T[1], temp), Rg = 8314.46 / P.M;
+    const cstar = Math.sqrt(g * Rg * T) / (g * Math.pow(2 / (g + 1), (g + 1) / (2 * (g - 1))));
+    const isp = Math.max(0, Cf) * cstar / 9.80665 * 0.95;
+    // the "best" bell for here is the one whose exit pressure exactly matches the outside air
+    let best = null;
+    if (alt < 60 && pc / Pa > 1.9) best = areaRatio(Math.sqrt(2 / (g - 1) * (Math.pow(pc / Pa, (g - 1) / g) - 1)), g);
+    const vac = alt >= 60, sep = !vac && ratio < 0.2;
+    let regime;
+    if (vac) regime = ['VACUUM · plume blooms wide, no shock diamonds', '#9fd0ff'];
+    else if (sep) regime = ['FLOW SEPARATION ⚠ bell is far too big for this altitude', '#ff6b6b'];
+    else if (ratio < 0.4) regime = ['HEAVILY OVEREXPANDED · Mach disk + shock diamonds', '#ffa36b'];
+    else if (ratio < 0.88) regime = ['OVEREXPANDED · plume pinched, shock diamonds', '#ffc36b'];
+    else if (ratio <= 1.15) regime = ['IDEALLY EXPANDED ✓ best efficiency here', '#7dffb0'];
+    else regime = ['UNDEREXPANDED · plume balloons outward', '#9fd0ff'];
+    return { P, Me, Pe, Pa, ratio, Cf, T, isp, best, regime, sep, vac };
+  }
+  // hotter = whiter and brighter, cooler = redder and dimmer
+  function tint(cl) {
+    let [r, g, b] = cl;
+    if (temp < 0.5) { const k = (0.5 - temp) * 1.6; r += (255 - r) * k * 0.3; g *= 1 - k * 0.55; b *= 1 - k * 0.75; }
+    else { const k = (temp - 0.5) * 0.75; r += (255 - r) * k; g += (255 - g) * k * 0.6; b += (255 - b) * k * 0.35; }
+    return `${r | 0},${g | 0},${b | 0}`;
+  }
+  function geom() {
+    const cy = H / 2, rc = 16, rt = 5, x0 = 12, xc = 30, xt = 42;
+    const re = rt * Math.sqrt(eps), Lb = (re - rt) * 2.1 + 12; // bell length ≈ 80% of a 15° cone
+    return { cy, rc, rt, x0, xc, xt, re, Lb, xe: xt + Lb };
+  }
+  function contour(G) { // inner wall, as [x, distance from the axis]
+    const pts = [[G.x0, G.rc], [G.xc, G.rc]];
+    for (let i = 1; i <= 10; i++) { const t = i / 10; pts.push([G.xc + (G.xt - G.xc) * t, G.rt + (G.rc - G.rt) * (1 + Math.cos(Math.PI * t)) / 2]); }
+    const p1 = [G.xt + G.Lb * 0.28, G.rt + (G.re - G.rt) * 0.82]; // parabolic "bell" (Rao-style) contour
+    for (let i = 1; i <= 24; i++) { const t = i / 24, u = 1 - t; pts.push([u * u * G.xt + 2 * u * t * p1[0] + t * t * G.xe, u * u * G.rt + 2 * u * t * p1[1] + t * t * G.re]); }
+    return pts;
+  }
+  function drawSky() {
+    const k = clamp(alt / 50, 0, 1);
+    const gr = c.createLinearGradient(0, 0, 0, H);
+    gr.addColorStop(0, `rgb(${lerp(26, 3, k) | 0},${lerp(46, 5, k) | 0},${lerp(84, 14, k) | 0})`); // dusk sky at sea level → black space up high
+    gr.addColorStop(1, `rgb(${lerp(66, 6, k) | 0},${lerp(84, 8, k) | 0},${lerp(118, 20, k) | 0})`);
+    c.fillStyle = gr; c.fillRect(0, 0, W, H);
+    if (k > 0.3) {
+      c.fillStyle = `rgba(255,255,255,${(k - 0.3) * 0.9})`;
+      for (let i = 0; i < 46; i++) c.fillRect((i * 97.3) % W, (i * 53.7 + Math.sin(i) * 20 + H) % H, 1.2, 1.2);
+    }
+  }
+  function drawNozzle(G, st) {
+    const pts = contour(G), th = 4, heat = level * (0.25 + temp * 0.75) * clamp((pc - 20) / 200 + 0.3, 0, 1);
+    if (level > 0.02) { // hot gas inside the chamber and bell
+      c.beginPath();
+      pts.forEach(([x, r], i) => i ? c.lineTo(x, G.cy - r) : c.moveTo(x, G.cy - r));
+      for (let i = pts.length - 1; i >= 0; i--) c.lineTo(pts[i][0], G.cy + pts[i][1]);
+      c.closePath();
+      const gi = c.createLinearGradient(G.x0, 0, G.xe, 0);
+      gi.addColorStop(0, `rgba(${tint(st.P.core)},${0.95 * level})`);
+      gi.addColorStop(0.4, `rgba(${tint(st.P.body)},${0.55 * level})`);
+      gi.addColorStop(1, `rgba(${tint(st.P.body)},${0.12 * level})`);
+      c.fillStyle = gi; c.fill();
+    }
+    for (const s of [-1, 1]) {
+      c.beginPath();
+      pts.forEach(([x, r], i) => { const y = G.cy + s * r; i ? c.lineTo(x, y) : c.moveTo(x, y); });
+      for (let i = pts.length - 1; i >= 0; i--) { const [x, r] = pts[i]; c.lineTo(x, G.cy + s * (r + th + (i < 12 ? 3 : 0))); }
+      c.closePath();
+      const gm = c.createLinearGradient(0, G.cy + s * G.rt, 0, G.cy + s * (G.re + th));
+      gm.addColorStop(0, '#d7a46c'); gm.addColorStop(0.5, '#9a6b44'); gm.addColorStop(1, '#5d5f68');
+      c.fillStyle = gm; c.fill();
+      // regenerative-cooling tubes run along the wall
+      c.strokeStyle = 'rgba(40,20,10,.35)'; c.lineWidth = 0.7;
+      for (const off of [1.4, 2.8]) {
+        c.beginPath();
+        for (let i = 11; i < pts.length; i++) { const [x, r] = pts[i]; const y = G.cy + s * (r + off); i > 11 ? c.lineTo(x, y) : c.moveTo(x, y); }
+        c.stroke();
+      }
+      if (heat > 0.05) { // the bell glows when it runs hot, brightest near the throat
+        c.globalCompositeOperation = 'lighter';
+        const gh = c.createLinearGradient(G.xt, 0, G.xe, 0);
+        gh.addColorStop(0, `rgba(255,${lerp(70, 200, temp) | 0},40,${0.8 * heat})`);
+        gh.addColorStop(1, `rgba(255,60,20,${0.14 * heat})`);
+        c.fillStyle = gh; c.fill();
+        c.globalCompositeOperation = 'source-over';
+      }
+    }
+    // exit lip, injector plate and feed line
+    c.fillStyle = '#4b4f5a'; c.fillRect(G.xe - 1.5, G.cy - G.re - th - 1, 3, 2 * (G.re + th) + 2);
+    c.fillStyle = '#4b5361'; c.fillRect(G.x0 - 6, G.cy - G.rc - 7, 7, 2 * (G.rc + 7));
+    c.fillRect(0, G.cy - 3, G.x0 - 6, 6);
+  }
+  function drawPlume(G, st, time) {
+    const P = st.P, thr = (pc - 20) / 280, bright = level * (0.65 + 0.5 * temp);
+    if (bright < 0.02) return;
+    const { vac, sep } = st;
+    let rj = G.re * clamp(Math.pow(st.ratio, 0.4), 0.45, vac ? 9 : 4); // fully-expanded jet radius
+    rj = Math.min(rj, H * (vac ? 0.48 : 0.6));
+    const wob = vac ? 0.015 : 0.04, fade = vac ? 0.55 : 1;
+    const L = Math.max(40, (W - G.xe) * (0.5 + 0.6 * thr) * P.len * (vac ? 1.15 : 1) + 25);
+    // shock-cell spacing ~ jet diameter, a bit longer at higher Mach
+    const s = clamp(2 * Math.min(rj, G.re * 1.5) * (0.75 + 0.12 * st.Me), 14, 80);
+    const start = sep ? G.xt + G.Lb * 0.55 : G.xe;
+    const r0 = sep ? G.re * 0.5 : G.re;
+    const NS = 70, prof = [];
+    for (let i = 0; i <= NS; i++) {
+      const d = i / NS * L;
+      let r;
+      if (vac) r = r0 + (rj - r0) * (1 - Math.exp(-d / (L * 0.4)));
+      else {
+        r = rj + (r0 - rj) * Math.cos(2 * Math.PI * d / s) * Math.exp(-d / (2.4 * s));
+        r += d * (0.05 + 0.12 * (1 - Math.min(1, st.Pa)));
+      }
+      r *= 1 + wob * Math.sin(time * 23 + i * 0.9) + (sep ? 0.2 * Math.sin(time * 37 + i * 1.7) : 0);
+      prof.push(Math.max(1, r * (0.3 + 0.7 * (1 - Math.pow(d / L, 2.4)))));
+    }
+    const shape = scale => {
+      c.beginPath();
+      for (let i = 0; i <= NS; i++) { const x = start + i / NS * L, y = G.cy - prof[i] * scale; i ? c.lineTo(x, y) : c.moveTo(x, y); }
+      for (let i = NS; i >= 0; i--) c.lineTo(start + i / NS * L, G.cy + prof[i] * scale);
+      c.closePath();
+    };
+    const fill = (scale, col, a, endFrac) => {
+      shape(scale);
+      const gr = c.createLinearGradient(start, 0, start + L * endFrac, 0);
+      gr.addColorStop(0, `rgba(${col},${a})`); gr.addColorStop(0.55, `rgba(${col},${a * 0.55})`); gr.addColorStop(1, `rgba(${col},0)`);
+      c.fillStyle = gr; c.fill();
+    };
+    if (P.soot && !vac) { // kerosene leaves a smoky, sooty tail downstream
+      shape(1.2);
+      const sg = c.createLinearGradient(start, 0, start + L, 0);
+      const sa = 0.32 * level * clamp(st.Pa * 1.3, 0, 1);
+      sg.addColorStop(0, 'rgba(40,28,22,0)'); sg.addColorStop(0.45, 'rgba(40,28,22,0)'); sg.addColorStop(0.8, `rgba(40,28,22,${sa})`); sg.addColorStop(1, 'rgba(40,28,22,0)');
+      c.fillStyle = sg; c.fill();
+    }
+    c.globalCompositeOperation = 'lighter';
+    // layered fills (wide + faint → narrow + bright) give soft edges and a hot core
+    fill(1.3, tint(P.glow), 0.14 * P.alpha * bright * fade, 1);
+    fill(1.0, tint(P.body), 0.3 * P.alpha * bright * fade, 1);
+    fill(0.72, tint(P.body), 0.32 * P.alpha * bright * fade, 0.9);
+    fill(0.42, tint(P.core), 0.6 * bright, vac ? 0.45 : 0.38);
+    const eg = c.createRadialGradient(start, G.cy, 0, start, G.cy, r0 * 1.5); // bloom at the nozzle exit
+    eg.addColorStop(0, `rgba(${tint(P.core)},${0.35 * bright})`); eg.addColorStop(1, `rgba(${tint(P.core)},0)`);
+    c.fillStyle = eg; c.beginPath(); c.arc(start, G.cy, r0 * 1.5, 0, 7); c.fill();
+    // shock diamonds: standing shock cells where the jet over/undershoots the outside pressure
+    const strength = vac ? 0 : clamp(Math.abs(Math.log(st.ratio)) * 0.85 + 0.15, 0.15, 1) * clamp(st.Pa * 1.4, 0, 1);
+    if (strength > 0.04) {
+      const off = st.ratio < 1 ? 0.5 : 0.8;
+      for (let k = 0; k < 10; k++) {
+        const d = s * (k + off);
+        if (d > L * 0.85) break;
+        const x = start + d, rr = prof[Math.min(NS, Math.round(d / L * NS))];
+        const a = strength * Math.exp(-k * 0.34) * bright;
+        c.beginPath();
+        c.moveTo(x - s * 0.3, G.cy); c.lineTo(x, G.cy - rr * 0.6); c.lineTo(x + s * 0.3, G.cy); c.lineTo(x, G.cy + rr * 0.6); c.closePath();
+        const gd = c.createRadialGradient(x, G.cy, 0, x, G.cy, Math.max(4, rr * 0.7));
+        gd.addColorStop(0, `rgba(${tint(P.dia)},${a})`); gd.addColorStop(0.6, `rgba(${tint(P.dia)},${a * 0.45})`); gd.addColorStop(1, `rgba(${tint(P.dia)},0)`);
+        c.fillStyle = gd; c.fill();
+        if (k === 0 && st.ratio < 0.45) { c.fillStyle = `rgba(255,255,255,${0.6 * a})`; c.fillRect(x - 1.2, G.cy - rr * 0.5, 2.4, rr); } // Mach disk
+      }
+    }
+    c.globalCompositeOperation = 'source-over';
+    if (level > 0.5 && P.sparks && Math.random() < 0.7) parts.push({ x: start + 4, y: G.cy + rand(-r0, r0) * 0.5, vx: rand(180, 380), vy: rand(-30, 30), life: rand(0.3, 0.7), max: 0.7, smoke: false });
+    if (level > 0.5 && P.smoke) parts.push({ x: start + L * rand(0.5, 0.9), y: G.cy + rand(-prof[NS >> 1], prof[NS >> 1]), vx: rand(40, 90), vy: rand(-20, 20), life: rand(1, 2), max: 2, smoke: true, r: rand(5, 10) });
+  }
+  function drawParts(dt) {
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i]; p.life -= dt;
+      if (p.life <= 0 || p.x > W + 20) { parts.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      const a = p.life / p.max;
+      if (p.smoke) { c.fillStyle = `rgba(215,215,220,${0.18 * a})`; c.beginPath(); c.arc(p.x, p.y, p.r * (2 - a), 0, 7); c.fill(); }
+      else { c.globalCompositeOperation = 'lighter'; c.fillStyle = `rgba(255,${(180 * a) | 0},60,${a})`; c.fillRect(p.x, p.y, 2, 1.2); c.globalCompositeOperation = 'source-over'; }
+    }
+  }
+  function updateReadouts() {
+    const st = state();
+    read.textContent = `${st.P.name} · Pc ${Math.round(pc)} bar · ε ${eps.toFixed(eps < 10 ? 1 : 0)} · ${Math.round(alt)} km · ${Math.round(st.T)} K`;
+    $('#nzMach').textContent = st.Me.toFixed(2);
+    $('#nzRatio').textContent = st.ratio >= 100 ? st.ratio.toExponential(0) : st.ratio.toFixed(2);
+    $('#nzCf').textContent = on ? Math.max(0, st.Cf).toFixed(2) : '–';
+    $('#nzIsp').textContent = on ? `${Math.round(st.isp)} s` : '–';
+    regEl.textContent = on ? st.regime[0] : 'ENGINE OFF · click ENGINE to relight';
+    regEl.style.color = on ? st.regime[1] : 'var(--faint)';
+    let hint = st.vac ? 'In vacuum a bigger bell always adds Isp (until it gets too heavy).'
+      : st.best == null ? 'Chamber pressure is too low to go supersonic here.'
+      : `Best bell for here: ε ≈ ${st.best > 120 ? '>120' : st.best.toFixed(st.best < 10 ? 1 : 0)}`;
+    if (preset >= 0) hint = `${PRESETS[preset].name}: ${PRESETS[preset].note}`;
+    hintEl.textContent = hint;
+    $('#nzPreset').textContent = preset >= 0 ? `▸ ${PRESETS[preset].name}` : '▸ CUSTOM';
+  }
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!visible || !W) return;
+    level += ((on ? 1 : 0) - level) * Math.min(1, dt * (on ? 6 : 3));
+    const st = state(), G = geom(), time = now / 1000;
+    c.save();
+    if (st.sep && level > 0.5) c.translate(rand(-1.2, 1.2), rand(-1.2, 1.2)); // separation makes the engine shudder
+    if (shake > 0) { shake -= dt; c.translate(rand(-2, 2), rand(-2, 2)); }
+    drawSky();
+    drawPlume(G, st, time);
+    drawParts(dt);
+    drawNozzle(G, st);
+    c.restore();
+  }
+  const knobs = {};
+  const kn = (id, min, max, val, fn) => { knobs[id] = Knob($(id), { min, max, value: val, onChange: v => { fn(v); if (!applying) preset = -1; updateReadouts(); } }); };
+  applying = true; // creating the knobs fires onChange; that shouldn't count as leaving the preset
+  kn('#kThr', 20, 300, pc, v => { pc = v; });
+  kn('#kEps', 3, 120, eps, v => { eps = v; });
+  kn('#kAlt', 0, 100, alt, v => { alt = v; });
+  kn('#kTemp', 0, 1, temp, v => { temp = v; });
+  applying = false;
+  const setProp = i => { prop = i; $('#nzProp').textContent = PROPS[prop].name; };
+  const cycleProp = () => { setProp((prop + 1) % PROPS.length); preset = -1; Snd.click(); updateReadouts(); };
+  $('#nzProp').addEventListener('click', cycleProp);
+  cv.addEventListener('click', cycleProp);
+  $('#nzPreset').addEventListener('click', () => {
+    preset = (preset + 1) % PRESETS.length;
+    const p = PRESETS[preset];
+    applying = true;
+    setProp(p.prop); knobs['#kThr'].set(p.pc, true); knobs['#kEps'].set(p.eps, true); knobs['#kAlt'].set(p.alt, true); knobs['#kTemp'].set(p.temp, true);
+    applying = false;
+    if (!on) $('#nzEngine').click();
+    Snd.ignite(); shake = 0.3; updateReadouts();
+  });
+  $('#nzEngine').addEventListener('click', e => {
+    on = !on; e.currentTarget.classList.toggle('on', on); e.currentTarget.textContent = on ? 'ENGINE ON' : 'ENGINE OFF';
+    if (on) { Snd.ignite(); shake = 0.35; } else Snd.pop();
+    updateReadouts();
+  });
+  fitCanvas(cv, c, (w, h) => { W = w; H = h; });
+  whenVisible(cv, v => { visible = v; });
+  updateReadouts();
+  requestAnimationFrame(frame);
+})();
+
+/* ================= propellant plumbing puzzle =================
+   Rotate pipe tiles so LOX (blue) and RP-1 (orange) each flow from their tank to the
+   matching engine inlet — without the two propellants ever touching. Each level is made by
+   drawing two non-crossing random routes first and then scrambling every tile, so it's always solvable. */
+(() => {
+  const cv = $('#plumb'), c = cv.getContext('2d'), msgEl = $('#plMsg'), infoEl = $('#plInfo'), leakEl = $('#plLeaks'), nextBtn = $('#plNext');
+  const N = 1, E = 2, S = 4, Wb = 8; // pipe openings as bit flags
+  const DIRS = [[N, 0, -1, S], [E, 1, 0, Wb], [S, 0, 1, N], [Wb, -1, 0, E]]; // [bit, dx, dy, opposite]
+  const ANG = { [N]: -Math.PI / 2, [E]: 0, [S]: Math.PI / 2, [Wb]: Math.PI };
+  const rotCW = m => ((m << 1) | (m >> 3)) & 15;
+  const rotN = (m, n) => { for (let i = 0; i < ((n % 4) + 4) % 4; i++) m = rotCW(m); return m; };
+  const FL = { 1: '88,198,255', 2: '255,138,61', 3: '255,77,109' }; // LOX, RP-1, mixed
+  const TOP = 46, BOT = 80;
+  let W = 0, H = 0, cols = 5, rows = 5, cell = 40, ox = 0, oy = TOP, tiles = [], P = null;
+  let moves = 0, hints = 0, solved = false, visible = true, last = performance.now(), fireT = 0;
+  let flow = { owner: [], leaks: [], engine: [0, 0], mixed: false, win: false, wrong: false };
+  let level = store.get('plumbLevel', 1);
+  const idx = (x, y) => y * cols + x;
+  const mask = (x, y) => { const t = tiles[idx(x, y)]; return rotN(t.base, t.turns); };
+
+  /* ---------- level generation ---------- */
+  function route(start, goal, blocked, minLen, maxLen) { // random self-avoiding path, start → goal
+    const seen = new Set(blocked), path = [];
+    let steps = 0;
+    const dfs = (x, y) => {
+      if (++steps > 6000) return false;
+      path.push([x, y]); seen.add(idx(x, y));
+      if (x === goal[0] && y === goal[1]) { if (path.length >= minLen) return true; }
+      else if (path.length < maxLen) {
+        for (const [, dx, dy] of shuffle(DIRS)) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= cols || ny >= rows || seen.has(idx(nx, ny))) continue;
+          if (dfs(nx, ny)) return true;
+        }
+      }
+      path.pop(); seen.delete(idx(x, y));
+      return false;
+    };
+    return dfs(start[0], start[1]) ? path : null;
+  }
+  function routeMasks(path, out) { // the openings each tile on a route needs
+    path.forEach(([x, y], i) => {
+      let m = 0;
+      const link = ([ax, ay]) => { for (const [b, dx, dy] of DIRS) if (x + dx === ax && y + dy === ay) m |= b; };
+      if (i === 0) m |= N; else link(path[i - 1]);               // first tile is fed from the tank above
+      if (i === path.length - 1) m |= S; else link(path[i + 1]); // last tile drains into the engine below
+      out.set(idx(x, y), m);
+    });
+  }
+  function baseFor(m) { // which tile shape (straight 5 / elbow 3) and rotation produce these openings
+    for (const b of [5, 3]) for (let r = 0; r < 4; r++) if (rotN(b, r) === m) return [b, r];
+    return [m, 0];
+  }
+  function generate() {
+    [cols, rows] = level <= 1 ? [5, 5] : level <= 3 ? [6, 5] : level <= 6 ? [6, 6] : [W >= 320 ? 7 : 6, 6];
+    for (let attempt = 0; attempt < 300; attempt++) {
+      const half = Math.floor(cols / 2);
+      const tl = (Math.random() * half) | 0, tf = half + ((Math.random() * (cols - half)) | 0);
+      const el = half - 1 + (cols % 2 && Math.random() < 0.5 ? 1 : 0), ef = el + 1;
+      const minL = rows + Math.min(level, 6), maxL = Math.floor(cols * rows * 0.45);
+      const r1 = route([tl, 0], [el, rows - 1], [idx(tf, 0), idx(ef, rows - 1)], minL, maxL);
+      if (!r1) continue;
+      const r2 = route([tf, 0], [ef, rows - 1], r1.map(([x, y]) => idx(x, y)), minL, maxL);
+      if (!r2) continue;
+      const need = new Map(); routeMasks(r1, need); routeMasks(r2, need);
+      const teeShare = Math.min(0.55, 0.2 + level * 0.05); // more T-junctions = more ways to make a mess
+      tiles = [];
+      for (let i = 0; i < cols * rows; i++) {
+        let base, sol = -1;
+        if (need.has(i)) [base, sol] = baseFor(need.get(i));
+        else base = Math.random() < teeShare ? 7 : Math.random() < 0.5 ? 5 : 3;
+        const turns = (Math.random() * 4) | 0;
+        tiles.push({ base, sol, turns, ang: turns * 90, flash: 0 });
+      }
+      P = { tl, tf, el, ef };
+      moves = 0; hints = 0; solved = false; fireT = 0;
+      compute();
+      if (flow.win) continue; // came out pre-solved — scramble again
+      nextBtn.hidden = true;
+      layout(); updateText();
+      return;
+    }
+  }
+
+  /* ---------- flow ---------- */
+  function compute() {
+    const owner = new Array(cols * rows).fill(0), leaks = [], engine = [0, 0];
+    let mixed = false;
+    const tankAt = x => x === P.tl ? 1 : x === P.tf ? 2 : 0;
+    for (const [bit, sx] of [[1, P.tl], [2, P.tf]]) {
+      if (!(mask(sx, 0) & N)) continue; // tank valve isn't connected to anything
+      const seen = new Set([idx(sx, 0)]), q = [[sx, 0]];
+      owner[idx(sx, 0)] |= bit;
+      while (q.length) {
+        const [x, y] = q.shift(), m = mask(x, y);
+        for (const [b, dx, dy, opp] of DIRS) {
+          if (!(m & b)) continue;
+          const nx = x + dx, ny = y + dy;
+          if (ny < 0) { const tk = tankAt(nx); if (tk && tk !== bit) mixed = true; else if (!tk) leaks.push([x, y, b, bit]); continue; }
+          if (ny >= rows) { if (nx === P.el) engine[0] |= bit; else if (nx === P.ef) engine[1] |= bit; else leaks.push([x, y, b, bit]); continue; }
+          if (nx < 0 || nx >= cols || !(mask(nx, ny) & opp)) { leaks.push([x, y, b, bit]); continue; }
+          const k = idx(nx, ny);
+          if (seen.has(k)) continue;
+          seen.add(k); owner[k] |= bit; q.push([nx, ny]);
+        }
+      }
+    }
+    if (owner.some(v => v === 3)) mixed = true;
+    flow = { owner, leaks, engine, mixed, win: !mixed && engine[0] === 1 && engine[1] === 2, wrong: engine[0] === 2 || engine[1] === 1 };
+  }
+  const leakCount = () => new Set(flow.leaks.map(([x, y, b]) => `${x},${y},${b}`)).size;
+  function updateText() {
+    infoEl.textContent = `Level ${solved ? level - 1 : level} · ${cols}×${rows} · moves ${moves}${hints ? ` · hints ${hints}` : ''}`;
+    const nl = leakCount();
+    leakEl.textContent = nl ? `💧 ${nl} leak${nl > 1 ? 's' : ''}` : '';
+    let text, col = '';
+    if (solved) { text = nl ? '🔥 IGNITION! Engine’s running (with a few drips).' : '🔥 IGNITION! Leak-free — perfect plumbing ⭐'; col = '#7dffb0'; }
+    else if (flow.mixed) { text = '⚠ LOX and fuel are touching — that’s a bomb, not an engine!'; col = '#ff6b81'; }
+    else if (flow.wrong) { text = 'Crossed wires: an inlet is getting the wrong propellant.'; col = '#ffc36b'; }
+    else text = 'Blue LOX → left inlet, orange RP-1 → right inlet. Click a pipe to rotate (right-click turns it back).';
+    msgEl.textContent = text; msgEl.style.color = col;
+  }
+  function afterMove() {
+    compute();
+    if (flow.win && !solved) {
+      solved = true; fireT = 0; level++; store.set('plumbLevel', level);
+      Snd.ignite(); setTimeout(() => Snd.play('win', { instr: 'glass' }), 300);
+      Rocky.say(pick(['Clean feed lines — ignition! 🔥', 'Plumbing certified. The engine is purring! 🔧', 'Both propellants flowing. Beautiful work!']));
+      nextBtn.hidden = false;
+    } else if (flow.mixed) Snd.buzz();
+    updateText();
+  }
+
+  /* ---------- drawing ---------- */
+  function layout() {
+    cell = Math.floor(Math.min((W - 16) / cols, 46));
+    ox = Math.round((W - cell * cols) / 2); oy = TOP;
+    const need = TOP + rows * cell + BOT;
+    if (Math.abs(cv.getBoundingClientRect().height - need) > 1) cv.style.height = need + 'px';
+  }
+  function pipe(cx, cy, dirs, ang, fill, t, fillCol) { // shell + fluid core for each opening
+    const len = cell / 2 + 0.5;
+    c.lineCap = 'butt';
+    for (const pass of [0, 1, 2]) {
+      c.beginPath();
+      for (const a of dirs) { const th = a + ang; c.moveTo(cx, cy); c.lineTo(cx + Math.cos(th) * len, cy + Math.sin(th) * len); }
+      if (pass === 0) { c.strokeStyle = '#59627a'; c.lineWidth = cell * 0.34; }
+      else if (pass === 1) { c.strokeStyle = fill ? `rgb(${fillCol})` : '#262c3b'; c.lineWidth = cell * 0.2; }
+      else { if (!fill) break; c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = cell * 0.07; c.setLineDash([3, 7]); c.lineDashOffset = -t * 26; }
+      c.stroke(); c.setLineDash([]);
+    }
+    c.fillStyle = '#6a7490'; c.beginPath(); c.arc(cx, cy, cell * 0.19, 0, 7); c.fill();
+    c.fillStyle = fill ? `rgb(${fillCol})` : '#2b3242'; c.beginPath(); c.arc(cx, cy, cell * 0.1, 0, 7); c.fill();
+  }
+  function drawTank(col, bit, label) {
+    const cx = ox + (col + 0.5) * cell, w = Math.min(cell * 0.9, 40), y0 = 4, y1 = TOP - 14;
+    pipe(cx, (y1 + oy) / 2, [Math.PI / 2, -Math.PI / 2], 0, true, last / 1000, FL[bit]);
+    const g = c.createLinearGradient(cx - w / 2, 0, cx + w / 2, 0);
+    g.addColorStop(0, '#9aa3b2'); g.addColorStop(0.45, '#f1f4f8'); g.addColorStop(1, '#7c8596');
+    c.fillStyle = g; c.beginPath(); c.roundRect(cx - w / 2, y0, w, y1 - y0, 7); c.fill();
+    c.fillStyle = `rgb(${FL[bit]})`; c.fillRect(cx - w / 2, y0 + (y1 - y0) / 2 - 6, w, 12);
+    c.fillStyle = '#0a0e1a'; c.font = '700 8.5px "Share Tech Mono", monospace'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(label, cx, y0 + (y1 - y0) / 2 + 0.5);
+  }
+  function drawEngine(t) {
+    const y0 = oy + rows * cell, ex = ox + (P.el + 1) * cell;
+    for (const [i, col, want] of [[0, P.el, 1], [1, P.ef, 2]]) { // inlet stubs, outlined in the color they want
+      const cx = ox + (col + 0.5) * cell, got = flow.engine[i];
+      c.strokeStyle = `rgba(${FL[want]},.6)`; c.lineWidth = cell * 0.34 + 3;
+      c.beginPath(); c.moveTo(cx, y0); c.lineTo(cx, y0 + 14); c.stroke();
+      pipe(cx, y0 + 7, [Math.PI / 2, -Math.PI / 2], 0, !!got, t, FL[got === want ? want : got ? 3 : want]);
+    }
+    c.fillStyle = '#6c7584'; c.beginPath(); c.roundRect(ex - cell * 0.95, y0 + 14, cell * 1.9, 10, 4); c.fill();
+    c.fillStyle = '#8b93a1'; c.fillRect(ex - 11, y0 + 24, 22, 13);
+    const bell = c.createLinearGradient(ex - 24, 0, ex + 24, 0);
+    bell.addColorStop(0, '#7a5434'); bell.addColorStop(0.5, '#d7a46c'); bell.addColorStop(1, '#6b4a2e');
+    c.fillStyle = bell; c.beginPath(); c.moveTo(ex - 9, y0 + 37); c.lineTo(ex + 9, y0 + 37); c.lineTo(ex + 23, y0 + 58); c.lineTo(ex - 23, y0 + 58); c.closePath(); c.fill();
+    if (solved) { // the payoff: engine lights up
+      fireT += 0.016;
+      const k = Math.min(1, fireT * 3), fl = 1 + Math.sin(t * 40) * 0.08, len = (H - y0 - 58) * k * fl;
+      c.globalCompositeOperation = 'lighter';
+      const fg = c.createLinearGradient(0, y0 + 58, 0, y0 + 58 + len);
+      fg.addColorStop(0, 'rgba(255,250,220,.95)'); fg.addColorStop(0.35, 'rgba(255,170,60,.8)'); fg.addColorStop(1, 'rgba(255,90,30,0)');
+      c.fillStyle = fg; c.beginPath(); c.moveTo(ex - 20, y0 + 58); c.lineTo(ex + 20, y0 + 58); c.lineTo(ex + 6, y0 + 58 + len); c.lineTo(ex - 6, y0 + 58 + len); c.closePath(); c.fill();
+      c.globalCompositeOperation = 'source-over';
+    }
+  }
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!visible || !W || !tiles.length) return;
+    const t = now / 1000;
+    c.clearRect(0, 0, W, H);
+    drawTank(P.tl, 1, 'LOX'); drawTank(P.tf, 2, 'RP-1');
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+      const tile = tiles[idx(x, y)], cx = ox + (x + 0.5) * cell, cy = oy + (y + 0.5) * cell;
+      c.fillStyle = tile.flash > 0 ? `rgba(125,255,176,${0.25 * tile.flash})` : 'rgba(255,255,255,.035)';
+      c.beginPath(); c.roundRect(ox + x * cell + 1.5, oy + y * cell + 1.5, cell - 3, cell - 3, 6); c.fill();
+      if (tile.flash > 0) tile.flash -= dt * 1.5;
+      tile.ang += (tile.turns * 90 - tile.ang) * Math.min(1, dt * 16);
+      const own = flow.owner[idx(x, y)];
+      const dirs = DIRS.filter(([b]) => tile.base & b).map(([b]) => ANG[b]);
+      const pulse = own === 3 ? `255,${(77 + 60 * Math.sin(t * 12)) | 0},109` : FL[own];
+      pipe(cx, cy, dirs, tile.ang * Math.PI / 180, !!own, t, pulse);
+    }
+    for (const [x, y, b, bit] of flow.leaks) { // drips at open pipe ends
+      const [, dx, dy] = DIRS.find(d => d[0] === b);
+      const ex = ox + (x + 0.5 + dx * 0.5) * cell, ey = oy + (y + 0.5 + dy * 0.5) * cell;
+      const ph = (t * 1.4 + ((x * 7 + y * 3 + b) % 10) / 10) % 1;
+      c.fillStyle = `rgba(${FL[bit]},${1 - ph})`;
+      c.beginPath(); c.arc(ex + dx * ph * cell * 0.3, ey + dy * ph * cell * 0.3 + ph * ph * 10, 2.6 * (1 - ph * 0.5), 0, 7); c.fill();
+    }
+    drawEngine(t);
+  }
+
+  /* ---------- input ---------- */
+  cv.addEventListener('contextmenu', e => e.preventDefault());
+  cv.addEventListener('pointerdown', e => {
+    if (solved || !tiles.length) return;
+    const r = cv.getBoundingClientRect();
+    const x = Math.floor((e.clientX - r.left - ox) / cell), y = Math.floor((e.clientY - r.top - oy) / cell);
+    if (x < 0 || y < 0 || x >= cols || y >= rows) return;
+    tiles[idx(x, y)].turns += (e.button === 2 || e.shiftKey) ? -1 : 1;
+    moves++; Snd.click();
+    afterMove();
+  });
+  $('#plHint').addEventListener('click', () => {
+    if (solved || !tiles.length) return;
+    const wrong = tiles.filter(t => t.sol >= 0 && rotN(t.base, t.turns) !== rotN(t.base, t.sol));
+    if (!wrong.length) return;
+    const t = wrong[(Math.random() * wrong.length) | 0];
+    let d = (((t.sol - t.turns) % 4) + 4) % 4; if (d === 3) d = -1; // turn the short way round
+    t.turns += d; t.flash = 1; hints++; moves++;
+    Snd.blip(990); afterMove();
+  });
+  $('#plNew').addEventListener('click', () => { Snd.click(); generate(); });
+  nextBtn.addEventListener('click', () => { Snd.whoosh(); generate(); });
+
+  fitCanvas(cv, c, (w, h) => { W = w; H = h; if (!tiles.length) generate(); else layout(); });
+  whenVisible(cv, v => { visible = v; });
+  requestAnimationFrame(frame);
+})();
+
+/* ================= launch control ================= */
+(() => {
+  const NAMES = ['FUEL', 'LOX', 'GUIDE', 'TELEM', 'RANGE', 'WX'];
+  const grid = $('#lcGrid'), cover = $('#lcCover'), btn = $('#lcBtn'), countEl = $('#lcCount'), msg = $('#lcMsg');
+  const go = Array(NAMES.length).fill(false);
+  let armed = false, counting = false, launches = store.get('launches', null), timer = null;
+  if (!launches || launches.date !== todayKey()) launches = { date: todayKey(), n: 0 };
+  $('#lcLaunches').textContent = launches.n;
+  const say = t => { msg.textContent = t; };
+  const btns = NAMES.map((name, i) => {
+    const b = document.createElement('button');
+    b.className = 'tgl'; b.innerHTML = `<span class="lamp"></span><span class="base"><span class="lever"></span></span><small>${name}</small>`;
+    b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-label', `${name} go/no-go switch`);
+    b.addEventListener('click', () => flip(i));
+    grid.appendChild(b); return b;
+  });
+  function draw() { btns.forEach((b, i) => { b.classList.toggle('go', go[i]); b.setAttribute('aria-pressed', go[i]); }); }
+  function flip(i) {
+    go[i] = !go[i]; draw(); Snd.clack();
+    if (counting && !go[i]) abort(`ABORT — ${NAMES[i]} went NO-GO!`);
+    else if (!counting) say(go.every(Boolean) ? (armed ? 'All stations GO. Press LAUNCH! 🔴' : 'All stations GO. Lift the safety cover. 🟢') : `${go.filter(Boolean).length}/${NAMES.length} stations GO`);
+  }
+  function abort(text) { clearInterval(timer); counting = false; countEl.textContent = 'ABORT'; say(text); Snd.buzz(); }
+  function reset(text) {
+    clearInterval(timer); counting = false; go.fill(false); draw();
+    armed = false; cover.classList.remove('open'); countEl.textContent = 'T-00';
+    say(text || 'Flip every station to GO, then open the cover.');
+  }
+  cover.addEventListener('click', () => { armed = !armed; cover.classList.toggle('open', armed); Snd.clack(); if (armed && !counting) say(go.every(Boolean) ? 'Armed. Press LAUNCH! 🔴' : 'Armed — but not every station is GO yet.'); });
+  btn.addEventListener('click', () => {
+    if (!armed || counting) return;
+    const nogo = NAMES.filter((_, i) => !go[i]);
+    if (nogo.length) { Snd.buzz(); say(`NO-GO: ${nogo.join(', ')}`); return; }
+    counting = true;
+    let n = 5;
+    const weatherScrub = Math.random() < 1 / 7; // sometimes the weather just doesn't cooperate
+    countEl.textContent = 'T-05'; Snd.beep(880); say('Terminal count…');
+    timer = setInterval(() => {
+      n--;
+      if (weatherScrub && n === 2) { go[5] = false; draw(); abort('HOLD HOLD HOLD — anvil cloud spotted. Weather NO-GO. Scrub! 🌩️'); return; }
+      if (n > 0) { countEl.textContent = 'T-0' + n; Snd.beep(880); return; }
+      clearInterval(timer);
+      countEl.textContent = 'LIFTOFF';
+      Snd.beep(1320); Snd.rumble();
+      const r = btn.getBoundingClientRect();
+      BG.launch(r.left + r.width / 2, r.top, true); BG.puff(r.left + r.width / 2, r.top + 10, 18);
+      launches.n++; store.set('launches', launches); $('#lcLaunches').textContent = launches.n;
+      say('We have liftoff! 🚀 Clear the tower.');
+      Rocky.excite(2500); Rocky.say('Liftoff!! Did you see that?! 🚀');
+      setTimeout(() => reset('Recycling the pad for the next launch…'), 3200);
+    }, 1000);
+  });
+  $('#lcScrub').addEventListener('click', () => { Snd.click(); reset(); });
+  reset();
+})();
+
+/* ================= orbit sandbox ================= */
+(() => {
+  const cv = $('#orbit'), c = cv.getContext('2d'), read = $('#obRead'), hint = $('#obHint');
+  let W = 0, H = 0, visible = true, last = performance.now();
+  const PR = 20, GM = 211750, KM_PER_PX = 6371 / PR;
+  const COLORS = ['255,138,61', '88,198,255', '184,156,255', '125,255,176', '255,214,102', '255,120,170'];
+  let sats = [], debris = [], aim = null, ci = 0, bg = [];
+  const step = (s, dt) => {
+    for (let k = 0; k < 4; k++) {
+      const h = dt / 4, r = Math.hypot(s.x, s.y), a = -GM / (r * r * r);
+      s.vx += a * s.x * h; s.vy += a * s.y * h; s.x += s.vx * h; s.y += s.vy * h;
+    }
+  };
+  function classify(x, y, vx, vy) {
+    const r = Math.hypot(x, y), E = (vx * vx + vy * vy) / 2 - GM / r, h = x * vy - y * vx;
+    if (E >= 0) return 'ESCAPE TRAJECTORY · so long! 👋';
+    const a = -GM / (2 * E), e = Math.sqrt(Math.max(0, 1 + 2 * E * h * h / (GM * GM)));
+    const peri = a * (1 - e), apo = a * (1 + e), km = v => Math.round((v - PR) * KM_PER_PX).toLocaleString();
+    if (peri < PR) return 'SUBORBITAL · it’s coming back down 💥';
+    if (e < 0.06) return `CIRCULAR ORBIT ✓ · altitude ${km(a)} km`;
+    return `ELLIPTICAL · periapsis ${km(peri)} km · apoapsis ${km(apo)} km · e ${e.toFixed(2)}`;
+  }
+  function add(x, y, vx, vy) {
+    if (sats.length >= 6) sats.shift();
+    sats.push({ x, y, vx, vy, trail: [], col: COLORS[ci++ % COLORS.length] });
+    read.textContent = classify(x, y, vx, vy);
+    hint.style.display = 'none';
+  }
+  function circular() {
+    const r = rand(PR + 25, Math.min(W, H) / 2 - 12), a = Math.random() * Math.PI * 2, v = Math.sqrt(GM / r), dir = Math.random() < 0.5 ? 1 : -1;
+    add(Math.cos(a) * r, Math.sin(a) * r, -Math.sin(a) * v * dir, Math.cos(a) * v * dir);
+    Snd.whoosh();
+  }
+  const local = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left - W / 2, e.clientY - r.top - H / 2]; };
+  const aimVel = () => [clamp((aim.x1 - aim.x0) * 1.4, -260, 260), clamp((aim.y1 - aim.y0) * 1.4, -260, 260)];
+  cv.addEventListener('pointerdown', e => {
+    const [x, y] = local(e);
+    if (Math.hypot(x, y) < PR + 3) return;
+    aim = { x0: x, y0: y, x1: x, y1: y }; cv.setPointerCapture(e.pointerId);
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!aim) return;
+    [aim.x1, aim.y1] = local(e);
+    const [vx, vy] = aimVel(); read.textContent = classify(aim.x0, aim.y0, vx, vy);
+  });
+  const release = () => {
+    if (!aim) return;
+    const [vx, vy] = aimVel();
+    if (Math.hypot(vx, vy) > 4) { add(aim.x0, aim.y0, vx, vy); Snd.whoosh(); }
+    aim = null;
+  };
+  cv.addEventListener('pointerup', release); cv.addEventListener('pointercancel', () => { aim = null; });
+  $('#obAuto').addEventListener('click', circular);
+  $('#obClear').addEventListener('click', () => { sats = []; debris = []; read.textContent = ''; Snd.click(); });
+
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.033, (now - last) / 1000); last = now;
+    if (!visible || !W) return;
+    c.clearRect(0, 0, W, H);
+    c.save(); c.translate(W / 2, H / 2);
+    for (const [x, y, a] of bg) { c.fillStyle = `rgba(255,255,255,${a})`; c.fillRect(x - W / 2, y - H / 2, 1.2, 1.2); }
+    const atm = c.createRadialGradient(0, 0, PR, 0, 0, PR + 10);
+    atm.addColorStop(0, 'rgba(110,180,255,.45)'); atm.addColorStop(1, 'rgba(110,180,255,0)');
+    c.fillStyle = atm; c.beginPath(); c.arc(0, 0, PR + 10, 0, 7); c.fill();
+    const pg = c.createRadialGradient(-7, -8, 2, 0, 0, PR);
+    pg.addColorStop(0, '#8fd0ff'); pg.addColorStop(0.5, '#2e6fd0'); pg.addColorStop(1, '#0f2a66');
+    c.fillStyle = pg; c.beginPath(); c.arc(0, 0, PR, 0, 7); c.fill();
+    c.fillStyle = 'rgba(90,190,120,.55)';
+    c.beginPath(); c.ellipse(-5, 3, 7, 4.5, 0.6, 0, 7); c.fill(); c.beginPath(); c.ellipse(7, -6, 4, 3, -0.4, 0, 7); c.fill();
+
+    for (let i = sats.length - 1; i >= 0; i--) {
+      const s = sats[i];
+      step(s, dt);
+      s.trail.push([s.x, s.y]); if (s.trail.length > 220) s.trail.shift();
+      const r = Math.hypot(s.x, s.y);
+      if (r < PR) { // crashed
+        for (let k = 0; k < 18; k++) { const a = Math.random() * 7, sp = rand(20, 90); debris.push({ x: s.x, y: s.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: rand(0.4, 0.9) }); }
+        Snd.pop(); sats.splice(i, 1); continue;
+      }
+      if (r > Math.max(W, H) * 1.5) { sats.splice(i, 1); continue; }
+      for (let k = 1; k < s.trail.length; k++) {
+        c.strokeStyle = `rgba(${s.col},${(k / s.trail.length) * 0.7})`; c.lineWidth = 1.5;
+        c.beginPath(); c.moveTo(s.trail[k - 1][0], s.trail[k - 1][1]); c.lineTo(s.trail[k][0], s.trail[k][1]); c.stroke();
+      }
+      c.fillStyle = '#fff'; c.beginPath(); c.arc(s.x, s.y, 2.6, 0, 7); c.fill();
+      c.fillStyle = `rgba(${s.col},.9)`; c.fillRect(s.x - 6, s.y - 0.8, 3.5, 1.6); c.fillRect(s.x + 2.5, s.y - 0.8, 3.5, 1.6);
+    }
+    for (let i = debris.length - 1; i >= 0; i--) {
+      const d = debris[i]; d.life -= dt; if (d.life <= 0) { debris.splice(i, 1); continue; }
+      d.x += d.vx * dt; d.y += d.vy * dt;
+      c.fillStyle = `rgba(255,${(160 * d.life) | 0},60,${d.life})`; c.fillRect(d.x, d.y, 2, 2);
+    }
+    if (aim) { // predicted trajectory while aiming
+      const [vx, vy] = aimVel(), p = { x: aim.x0, y: aim.y0, vx, vy };
+      c.strokeStyle = 'rgba(255,255,255,.55)'; c.setLineDash([3, 5]); c.lineWidth = 1.2;
+      c.beginPath(); c.moveTo(p.x, p.y);
+      for (let k = 0; k < 360; k++) { step(p, 1 / 60); if (Math.hypot(p.x, p.y) < PR) break; c.lineTo(p.x, p.y); }
+      c.stroke(); c.setLineDash([]);
+      c.strokeStyle = 'rgba(255,214,102,.9)'; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(aim.x0, aim.y0); c.lineTo(aim.x1, aim.y1); c.stroke();
+      c.fillStyle = '#fff'; c.beginPath(); c.arc(aim.x0, aim.y0, 3, 0, 7); c.fill();
+    }
+    c.restore();
+  }
+  fitCanvas(cv, c, (w, h) => {
+    W = w; H = h;
+    bg = Array.from({ length: Math.round(w * h / 900) }, () => [Math.random() * w, Math.random() * h, rand(0.15, 0.6)]);
+    if (!sats.length) { circular(); hint.style.display = ''; read.textContent = ''; }
+  });
+  whenVisible(cv, v => { visible = v; });
+  requestAnimationFrame(frame);
+})();
+
+/* ================= wind tunnel =================
+   Potential flow around a Joukowski airfoil: flow around a circle, conformally
+   mapped (z = ζ + 1/ζ) into a wing shape, with the Kutta condition setting the lift. */
+(() => {
+  const cv = $('#tunnel'), c = cv.getContext('2d'), read = $('#wtRead');
+  let W = 0, H = 0, visible = true, last = performance.now(), k = 40;
+  const PROFILES = [{ name: 'SYMMETRIC', mu: [-0.09, 0] }, { name: 'CAMBERED', mu: [-0.09, 0.09] }, { name: 'HIGH-LIFT', mu: [-0.1, 0.17] }];
+  let prof = 1, aoa = 5, U = 1, mu, R, beta, chord, foil = [], parts = [];
+  const STALL = 14;
+  // tiny complex-number kit: [re, im]
+  const cadd = (a, b) => [a[0] + b[0], a[1] + b[1]], csub = (a, b) => [a[0] - b[0], a[1] - b[1]];
+  const cmul = (a, b) => [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]];
+  const cdiv = (a, b) => { const d = b[0] * b[0] + b[1] * b[1]; return [(a[0] * b[0] + a[1] * b[1]) / d, (a[1] * b[0] - a[0] * b[1]) / d]; };
+  const cabs = a => Math.hypot(a[0], a[1]), cexp = th => [Math.cos(th), Math.sin(th)];
+  const csqrt = a => { const r = cabs(a), re = Math.sqrt((r + a[0]) / 2), im = Math.sign(a[1] || 1) * Math.sqrt(Math.max(0, (r - a[0]) / 2)); return [re, im]; };
+
+  function setup() {
+    mu = PROFILES[prof].mu; R = cabs(csub([1, 0], mu)); beta = -Math.atan2(-mu[1], 1 - mu[0]);
+    foil = [];
+    for (let i = 0; i <= 120; i++) { const z = cexp(i / 120 * Math.PI * 2), zeta = cadd(mu, [R * z[0], R * z[1]]); foil.push(cadd(zeta, cdiv([1, 0], zeta))); }
+    const xs = foil.map(p => p[0]); chord = Math.max(...xs) - Math.min(...xs);
+  }
+  const alpha = () => aoa * Math.PI / 180;
+  const stall = () => clamp((aoa - STALL) / 8, 0, 1);
+  const gamma = () => 4 * Math.PI * U * R * Math.sin(alpha() + beta) * (1 - 0.55 * stall());
+  function velocity(zw) { // world point (y up) -> world velocity, or null if inside the wing
+    const a = alpha(), za = cmul(zw, cexp(a));
+    const sq = csqrt(csub(cmul(za, za), [4, 0]));
+    let zeta = [(za[0] + sq[0]) / 2, (za[1] + sq[1]) / 2];
+    const alt = [(za[0] - sq[0]) / 2, (za[1] - sq[1]) / 2];
+    if (cabs(csub(alt, mu)) > cabs(csub(zeta, mu))) zeta = alt;
+    const zm = csub(zeta, mu);
+    if (cabs(zm) < R * 1.01) return null;
+    const G = gamma();
+    let dW = csub([U * Math.cos(a), -U * Math.sin(a)], cmul([U * R * R, 0], cdiv(cexp(a), cmul(zm, zm))));
+    dW = cadd(dW, cdiv([0, G / (2 * Math.PI)], zm));
+    const dz = csub([1, 0], cdiv([1, 0], cmul(zeta, zeta)));
+    if (cabs(dz) < 1e-3) return null;
+    const conj = cdiv(dW, dz);
+    const va = [conj[0], -conj[1]];
+    return cmul(va, cexp(-a));
+  }
+  const toScreen = p => [W / 2 + p[0] * k, H / 2 - p[1] * k];
+  function spawn(p, x) { p.x = x ?? -W / 2 / k - 0.1; p.y = rand(-H / 2 / k, H / 2 / k); p.px = p.x; p.py = p.y; }
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.033, (now - last) / 1000); last = now;
+    if (!visible || !W) return;
+    // fade instead of clearing, so particles leave smoky streaks
+    c.globalCompositeOperation = 'destination-out';
+    c.fillStyle = 'rgba(0,0,0,.09)'; c.fillRect(0, 0, W, H);
+    c.globalCompositeOperation = 'source-over';
+    const st = stall(), a = alpha(), xmax = W / 2 / k + 0.2;
+    c.lineWidth = 1.4;
+    for (const p of parts) {
+      for (let s = 0; s < 2; s++) {
+        let v = velocity([p.x, p.y]);
+        if (!v) { spawn(p); break; }
+        if (st > 0 && p.x > -0.6 && p.y > -0.4 && p.y < 1.4) { v = [v[0] + rand(-1, 1) * st * U * 1.8, v[1] + rand(-1, 1) * st * U * 1.8]; } // stalled, turbulent wake
+        const sp = cabs(v); if (sp > 5 * U) v = [v[0] / sp * 5 * U, v[1] / sp * 5 * U];
+        p.px = p.x; p.py = p.y;
+        p.x += v[0] * dt * 0.9; p.y += v[1] * dt * 0.9;
+        const ratio = clamp(cabs(v) / U, 0, 2);
+        const [x0, y0] = toScreen([p.px, p.py]), [x1, y1] = toScreen([p.x, p.y]);
+        c.strokeStyle = `rgba(${lerp(90, 255, ratio / 2) | 0},${lerp(170, 255, ratio / 2) | 0},255,${0.22 + ratio * 0.18})`;
+        c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke();
+      }
+      if (p.x > xmax || Math.abs(p.y) > H / k) spawn(p);
+    }
+    // the wing (redrawn every frame on top)
+    const shakeY = st > 0 ? rand(-1, 1) * st * 1.5 : 0;
+    c.beginPath();
+    foil.forEach((pt, i) => { const w = cmul(pt, cexp(-a)), [x, y] = toScreen(w); i ? c.lineTo(x, y + shakeY) : c.moveTo(x, y + shakeY); });
+    c.closePath();
+    const fg = c.createLinearGradient(0, H / 2 - 20, 0, H / 2 + 20); fg.addColorStop(0, '#e6ebf3'); fg.addColorStop(1, '#8e98a8');
+    c.fillStyle = fg; c.fill(); c.strokeStyle = 'rgba(255,255,255,.6)'; c.lineWidth = 1; c.stroke();
+    // lift arrow from the quarter-chord
+    const CL = 2 * gamma() / (U * chord);
+    const qc = toScreen(cmul([-chord / 4, 0], cexp(-a)));
+    const len = clamp(CL, -0.6, 2.2) * 22;
+    c.strokeStyle = st > 0 ? '#ff6b6b' : '#7dffb0'; c.fillStyle = c.strokeStyle; c.lineWidth = 2.5;
+    c.beginPath(); c.moveTo(qc[0], qc[1] + shakeY); c.lineTo(qc[0], qc[1] - len + shakeY); c.stroke();
+    if (Math.abs(len) > 6) { const sgn = Math.sign(len); c.beginPath(); c.moveTo(qc[0], qc[1] - len - sgn * 6 + shakeY); c.lineTo(qc[0] - 5, qc[1] - len + sgn * 2 + shakeY); c.lineTo(qc[0] + 5, qc[1] - len + sgn * 2 + shakeY); c.fill(); }
+    read.textContent = `${PROFILES[prof].name} · α ${aoa.toFixed(1)}° · CL ${CL.toFixed(2)} · ${Math.round(U * 120)} m/s${st > 0 ? ' · STALL ⚠' : ''}`;
+    read.style.color = st > 0 ? '#ff8b8b' : '';
+  }
+  Knob($('#kAoa'), { min: -8, max: 22, value: aoa, onChange: v => { aoa = v; } });
+  Knob($('#kSpd'), { min: 0.4, max: 2.2, value: U, onChange: v => { U = v; } });
+  $('#wtProf').addEventListener('click', e => { prof = (prof + 1) % PROFILES.length; e.currentTarget.textContent = PROFILES[prof].name; setup(); Snd.click(); });
+  setup();
+  fitCanvas(cv, c, (w, h) => {
+    W = w; H = h; k = w / 7.2;
+    parts = Array.from({ length: 200 }, () => { const p = {}; spawn(p, rand(-W / 2 / k, W / 2 / k)); return p; });
+  });
+  whenVisible(cv, v => { visible = v; });
+  requestAnimationFrame(frame);
+})();
+
+/* ================= settings ================= */
+const dlg = $('#settings'), form = $('#setForm');
+function fillForm(src) {
+  const f = form.elements;
+  ['work', 'short', 'long', 'interval', 'volume', 'sound', 'quoteSec'].forEach(k => { f[k].value = src[k]; });
+  ['autoBreak', 'autoWork', 'encourage', 'uiSounds'].forEach(k => { f[k].checked = src[k]; });
+}
+$('#settingsBtn').addEventListener('click', () => { Snd.click(); fillForm(settings); dlg.showModal(); });
+$('#cancelBtn').addEventListener('click', () => dlg.close());
+$('#defaultsBtn').addEventListener('click', () => fillForm(DEFAULTS));
+dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+dlg.addEventListener('close', () => Snd.setVolume());
+form.elements.volume.addEventListener('input', e => Snd.setMaster(+e.target.value));
+$('#testSound').addEventListener('click', () => { Snd.setMaster(+form.elements.volume.value); Snd.play('workDone', { instr: form.elements.sound.value }); });
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  const f = form.elements;
+  const num = (k, lo, hi) => { const v = Math.round(+f[k].value); return Number.isFinite(v) && v > 0 ? clamp(v, lo, hi) : DEFAULTS[k]; };
+  const soundChanged = f.sound.value !== settings.sound, prevQuoteSec = settings.quoteSec;
+  Object.assign(settings, {
+    work: num('work', 1, 99), short: num('short', 1, 60), long: num('long', 1, 99), interval: num('interval', 2, 12),
+    autoBreak: f.autoBreak.checked, autoWork: f.autoWork.checked, encourage: f.encourage.checked, uiSounds: f.uiSounds.checked,
+    sound: f.sound.value, volume: clamp(+f.volume.value, 0, 1),
+    quoteSec: f.quoteSec.value === '' || !Number.isFinite(+f.quoteSec.value) ? DEFAULTS.quoteSec : clamp(Math.round(+f.quoteSec.value), 0, 3600),
+  });
+  store.set('settings', settings);
+  dlg.close();
+  buildLeds();
+  if (!S.running) S.remaining = durMs(S.mode);
+  else if (soundChanged) Snd.scheduleAlarm(songFor(S.mode), (S.endAt - Date.now()) / 1000);
+  afterStateChange();
+  if (settings.quoteSec !== prevQuoteSec) CRT.restartBar();
+  toast('Settings saved ✓');
+});
+
+/* ================= other timers in the series =================
+   Keep this list identical in every variant (PomodOhm, Apollodoro, …); add a line here for each new one. */
+const VARIANTS = [
+  { file: 'PomodOhm.html', name: 'PomodΩhm', icon: '⚡', blurb: 'Electrical engineering · circuits, LEDs & Sparky' },
+  { file: 'Apollodoro.html', name: 'Apollodoro', icon: '🚀', blurb: 'Aerospace · rockets, orbits & Rocky' },
+];
+(() => {
+  const here = decodeURIComponent(location.pathname.split('/').pop() || '').toLowerCase();
+  const isHere = v => here === v.file.toLowerCase();
+  $('#variantList').innerHTML = VARIANTS.map(v => isHere(v)
+    ? `<div class="variant here"><span class="v-icon">${v.icon}</span><span><b>${v.name}</b><small>you’re here</small></span></div>`
+    : `<a class="variant" href="${v.file}"><span class="v-icon">${v.icon}</span><span><b>${v.name}</b><small>${v.blurb}</small></span><span class="v-go">→</span></a>`).join('');
+  $('#variantFoot').innerHTML = 'Other timers: ' + VARIANTS.filter(v => !isHere(v)).map(v => `<a href="${v.file}">${v.icon} ${v.name}</a>`).join(' &nbsp;·&nbsp; ');
+})();
+
+/* ================= wiring ================= */
+function renderMute() { const b = $('#muteBtn'); b.innerHTML = muted ? ICON.mute : ICON.vol; b.title = muted ? 'Unmute (M)' : 'Mute (M)'; b.setAttribute('aria-label', b.title); }
+function toggleMute() { muted = !muted; store.set('muted', muted); Snd.setVolume(); renderMute(); toast(muted ? 'Sound muted 🔇' : 'Sound on 🔊'); }
+
+$('#muteBtn').addEventListener('click', toggleMute);
+$('#startBtn').addEventListener('click', toggle);
+$('#resetBtn').addEventListener('click', reset);
+$('#skipBtn').addEventListener('click', skip);
+$$('.mode-switch button').forEach(b => b.addEventListener('click', () => { Snd.click(); setMode(b.dataset.mode); }));
+
+const task = $('#taskInput');
+task.value = store.get('task', '');
+task.addEventListener('input', () => store.set('task', task.value));
+task.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'Escape') task.blur(); });
+
+document.addEventListener('pointerdown', e => {
+  Snd.ensure(); // unlock audio on first interaction
+  if (!(e.target instanceof Element) || e.target.closest('.card, button, input, select, label, dialog, .brand, .top-actions, .hint')) return;
+  BG.surprise(e.clientX, e.clientY); // rocket, meteor shower, comet, star flare, nova… or something stranger
+});
+
+document.addEventListener('keydown', e => {
+  if (dlg.open || e.ctrlKey || e.metaKey || e.altKey) return;
+  const tag = e.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+    toggle();
+  } else if (e.key === 'r' || e.key === 'R') reset();
+  else if (e.key === 's' || e.key === 'S') skip();
+  else if (e.key === 'm' || e.key === 'M') toggleMute();
+});
+
+/* ================= go ================= */
+BG.init();
+renderMute(); renderStats(); buildLeds(); setMode('work');
+CRT.next();
+Rocky.say('Hi, I’m Rocky! 🚀 Press Launch and we’ll have liftoff.');
+})();
+</script>
+</body>
+</html>
