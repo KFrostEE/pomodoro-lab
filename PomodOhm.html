@@ -1,0 +1,1726 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PomodΩhm</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23132a2e'/><circle cx='32' cy='26' r='19' fill='%23ffb44c' opacity='.25'/><circle cx='32' cy='26' r='15' fill='%23ffde78'/><path d='M22 33h20l-4 12h-12z' fill='%23ffde78'/><rect x='24' y='45' width='16' height='4' rx='2' fill='%23bac4c9'/><rect x='25' y='50' width='14' height='4' rx='2' fill='%23bac4c9'/><path d='M28 55h8l-2 4h-4z' fill='%233a3f42'/><circle cx='27' cy='25' r='2.4' fill='%232b2320'/><circle cx='37' cy='25' r='2.4' fill='%232b2320'/><path d='M28 30q4 3.6 8 0' stroke='%232b2320' stroke-width='2' fill='none' stroke-linecap='round'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b1418;
+  --card:rgba(14,26,31,.9);
+  --card-border:rgba(160,220,210,.10);
+  --text:#e7f1ee;
+  --muted:#8fa8a6;
+  --faint:#5c7472;
+  --work:#ffb44c;
+  --short:#4fe0d2;
+  --long:#b59bff;
+  --accent:var(--work);
+  --accent-rgb:255,180,76;
+  --radius:20px;
+  --mono:'Share Tech Mono',ui-monospace,Consolas,monospace;
+}
+body[data-mode="short"]{--accent:var(--short);--accent-rgb:79,224,210}
+body[data-mode="long"]{--accent:var(--long);--accent-rgb:181,155,255}
+
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  background:
+    radial-gradient(1100px 700px at 15% -10%, #12292d 0%, transparent 60%),
+    radial-gradient(900px 700px at 105% 110%, #171b33 0%, transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:'Space Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+.app{position:relative;z-index:1;max-width:1780px;margin:0 auto;padding:20px 24px 28px}
+button{font:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* ---------- header ---------- */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.atom{width:46px;height:46px;color:var(--accent);transition:color .6s;overflow:visible}
+.atom ellipse{fill:none;stroke:currentColor;stroke-width:1.6;opacity:.65}
+.atom .nucleus{fill:currentColor}
+.atom .e{fill:#fff}
+.atom-spin{transform-origin:24px 24px;animation:spin 30s linear infinite}
+.brand h1{font-size:26px;margin:0;letter-spacing:.5px;font-weight:700;line-height:1}
+.brand .ohm{color:var(--accent);text-shadow:0 0 14px rgba(var(--accent-rgb),.6);transition:color .6s}
+.brand .tag{margin:5px 0 0;color:var(--muted);font-size:13px}
+.top-actions{display:flex;align-items:center;gap:10px}
+.today{font-size:13px;color:var(--muted);background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.06);padding:8px 14px;border-radius:999px;white-space:nowrap}
+.today b{color:var(--accent);font-weight:700;transition:color .6s}
+.icon-btn{width:40px;height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.28);color:var(--text);display:grid;place-items:center;cursor:pointer;transition:background .2s,transform .15s}
+.icon-btn:hover{background:rgba(255,255,255,.08)}
+.icon-btn:active{transform:scale(.92)}
+.icon-btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- layout ----------
+   The timer + quotes ("stage") is always centered and comes first.
+   Fidgets sit beside it when there's room, otherwise below (scroll to reach). */
+.layout{display:grid;gap:22px;justify-content:center;align-items:start;grid-template-columns:minmax(0,560px);grid-template-areas:"stage" "left" "right"}
+.stage{grid-area:stage;display:grid;gap:20px;grid-template-columns:minmax(0,1fr);align-items:stretch;min-width:0}
+.lab{display:flex;flex-direction:column;gap:20px;min-width:0}
+.lab-left{grid-area:left}
+.lab-right{grid-area:right}
+.lab-title{display:flex;align-items:baseline;gap:10px;margin:4px 4px -6px;min-height:24px}
+.lab-title h2{margin:0;font-size:17px;font-weight:700}
+.lab-title span{color:var(--faint);font-size:13px}
+/* medium: stage centered on top, two fidget columns underneath */
+@media (min-width:740px){
+  .layout{grid-template-columns:repeat(2,minmax(0,350px));grid-template-areas:"stage stage" "left right"}
+  .stage{width:min(560px,100%);justify-self:center}
+}
+/* big & tall screens: fidgets flank the stage */
+@media (min-width:1200px) and (min-height:1000px){
+  .layout{grid-template-columns:minmax(0,330px) minmax(0,540px) minmax(0,330px);grid-template-areas:"left stage right"}
+  .stage{width:100%}
+}
+/* wide but not tall (most laptops/monitors): timer and quotes side by side so both stay in view */
+@media (min-width:1000px) and (max-height:999px){
+  .layout{grid-template-columns:repeat(2,minmax(0,490px));grid-template-areas:"stage stage" "left right"}
+  .stage{width:100%;grid-template-columns:minmax(0,500px) minmax(0,1fr)}
+  .inspo{display:flex;flex-direction:column}
+  .inspo .lcd{flex:1;font-size:20px}
+  .stage .dial-wrap{width:min(100%,360px,max(220px,calc(100vh - 390px)))}
+}
+@media (min-width:1740px) and (max-height:999px){
+  .layout{grid-template-columns:minmax(0,320px) minmax(0,1000px) minmax(0,320px);grid-template-areas:"left stage right"}
+}
+.card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:0 12px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04)}
+
+/* ---------- timer card ---------- */
+.timer-card{padding:20px 22px 22px}
+.mode-switch{position:relative;display:grid;grid-template-columns:repeat(3,1fr);background:rgba(0,0,0,.3);border-radius:14px;padding:4px;border:1px solid rgba(255,255,255,.05)}
+.mode-switch button{position:relative;z-index:1;background:none;border:0;color:var(--muted);font-weight:600;font-size:14px;padding:9px 4px;border-radius:10px;cursor:pointer;transition:color .3s}
+.mode-switch button:hover{color:var(--text)}
+.mode-switch button.active{color:#0b1418}
+.mode-switch .slider{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/3);border-radius:10px;background:var(--accent);box-shadow:0 0 18px rgba(var(--accent-rgb),.45);transition:transform .4s cubic-bezier(.4,1.5,.5,1),background .5s}
+body[data-mode="short"] .mode-switch .slider{transform:translateX(100%)}
+body[data-mode="long"] .mode-switch .slider{transform:translateX(200%)}
+
+.dial-wrap{position:relative;width:min(100%,360px,max(250px,calc(100vh - 700px)));aspect-ratio:1;margin:18px auto 4px}
+.dial{width:100%;height:100%;display:block;overflow:visible}
+.dial .track{fill:none;stroke:rgba(255,255,255,.06);stroke-width:12}
+.dial .progress{fill:none;stroke:var(--accent);stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset .25s linear,stroke .5s;filter:drop-shadow(0 0 6px rgba(var(--accent-rgb),.65))}
+.dial .tick{stroke:rgba(255,255,255,.13);stroke-width:1.5}
+.dial .tick.major{stroke:rgba(255,255,255,.32);stroke-width:2.2}
+.head-g{transform-origin:170px 170px;transition:transform .25s linear}
+.head{fill:#fff;filter:drop-shadow(0 0 5px var(--accent)) drop-shadow(0 0 10px var(--accent))}
+.orbit-g{transform-origin:170px 170px;animation:spin 16s linear infinite;animation-play-state:paused}
+body.running .orbit-g{animation-play-state:running}
+.orbit{fill:none;stroke:rgba(var(--accent-rgb),.22);stroke-width:1.2;stroke-dasharray:2 7}
+.electron{fill:var(--accent);filter:drop-shadow(0 0 4px var(--accent));transition:fill .5s}
+.dial-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;pointer-events:none}
+.status{font-family:var(--mono);font-size:13px;letter-spacing:3px;color:var(--accent);display:flex;align-items:center;gap:8px;transition:color .5s}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+body.running .status-dot{animation:blink 1s steps(2,start) infinite}
+.seven{width:64%}
+.seven svg{width:100%;display:block;overflow:visible;filter:drop-shadow(0 0 7px rgba(var(--accent-rgb),.55))}
+.seg{fill:rgba(var(--accent-rgb),.07);transition:fill .12s}
+.seg.on{fill:var(--accent)}
+.charge{font-family:var(--mono);color:var(--muted);font-size:13px;letter-spacing:1px}
+.charge sub{font-size:9px}
+
+.controls{display:flex;justify-content:center;align-items:center;gap:18px;margin-top:6px}
+.ctl{border:0;cursor:pointer;color:var(--text);display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s,box-shadow .15s,background .3s}
+.ctl svg{width:20px;height:20px}
+.ctl.secondary{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09)}
+.ctl.secondary:hover{background:rgba(255,255,255,.12)}
+.ctl.secondary:active{transform:scale(.9)}
+.ctl.primary{min-width:156px;height:58px;padding:0 26px;border-radius:30px;color:#10181b;font-weight:700;font-size:18px;letter-spacing:.4px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--accent),white 25%),var(--accent));
+  box-shadow:0 6px 0 color-mix(in srgb,var(--accent),black 50%),0 10px 30px rgba(var(--accent-rgb),.35)}
+.ctl.primary:hover{filter:brightness(1.05)}
+.ctl.primary:active{transform:translateY(5px);box-shadow:0 1px 0 color-mix(in srgb,var(--accent),black 50%),0 4px 16px rgba(var(--accent-rgb),.3)}
+
+.cycle{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:20px;color:var(--muted);font-size:13px}
+.leds{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.led{width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#3a4a4f,#1a2427);border:1px solid rgba(255,255,255,.08);transition:all .4s}
+.led.on{background:radial-gradient(circle at 35% 35%,#fff 0 12%,var(--accent) 45%,color-mix(in srgb,var(--accent),black 45%));box-shadow:0 0 10px rgba(var(--accent-rgb),.85);border-color:transparent}
+.task{width:100%;margin-top:16px;background:rgba(0,0,0,.25);border:1px dashed rgba(255,255,255,.13);border-radius:12px;padding:11px 14px;color:var(--text);font:inherit;font-size:15px;text-align:center;transition:border-color .2s}
+.task::placeholder{color:var(--faint)}
+.task:focus{outline:none;border-color:rgba(var(--accent-rgb),.7);border-style:solid}
+
+/* ---------- Sparky + LCD ---------- */
+.inspo{padding:18px 18px 20px}
+.sparky-row{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.sparky{width:94px;height:132px;flex:none;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;border-radius:16px}
+.sparky svg{width:100%;height:100%;overflow:visible;animation:floaty 4s ease-in-out infinite}
+.sparky.bounce svg{animation:bouncy .55s cubic-bezier(.3,1.6,.5,1)}
+.sparky .halo{opacity:0;transition:opacity .5s}
+.sparky.lit .halo{opacity:1;animation:halo 2.6s ease-in-out infinite}
+.sparky .glass{fill:#dfe8e5;stroke:rgba(255,255,255,.7);stroke-width:1.5;transition:fill .5s}
+.sparky.lit .glass{fill:#fff2bd}
+.sparky .shine{fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;opacity:.75}
+.sparky .eyes ellipse{fill:#2b2320}
+.sparky .eyes{transform-box:fill-box;transform-origin:center;animation:eyeblink 5s infinite}
+.sparky .ln{fill:none;stroke:#2b2320;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.sparky .mouth-open{fill:#2b2320}
+.sparky .cheek{fill:#ff9fae;opacity:.6}
+.sparky .base{fill:#aeb8bd;stroke:#7b858a;stroke-width:1}
+.sparky .tip{fill:#3a3f42}
+.sparky .tag{transform-box:view-box;transform-origin:50px 90px;animation:sway 3.6s ease-in-out infinite}
+.sparky.bounce .tag{animation:swing .9s cubic-bezier(.3,1.6,.5,1)}
+.sparky .tag-string{fill:none;stroke:#7fd3c9;stroke-width:1.4;stroke-linecap:round}
+.sparky .tag-card{fill:#fffdf6;stroke:#d9393f;stroke-width:1.4}
+.sparky .tag-band{fill:#d9393f}
+.sparky .tag-hello{fill:#fff;font:700 5.6px 'Space Grotesk',system-ui,sans-serif;letter-spacing:.6px}
+.sparky .tag-name{fill:#2b2320;font:700 11px 'Space Grotesk',system-ui,sans-serif;letter-spacing:.4px}
+.sparky .tag-clip{fill:#aeb8bd;stroke:#7b858a;stroke-width:.8}
+.sparky .f{display:none}
+.sparky[data-face="idle"] .f-idle,.sparky[data-face="focus"] .f-focus,.sparky[data-face="break"] .f-break,.sparky[data-face="happy"] .f-happy{display:inline}
+.bubble{position:relative;flex:1;background:#f4efe2;color:#2a2622;border-radius:14px;padding:11px 14px;font-size:14px;line-height:1.42;min-height:58px;display:flex;align-items:center}
+.bubble::before{content:"";position:absolute;left:-9px;top:50%;margin-top:-9px;border:9px solid transparent;border-right-color:#f4efe2;border-left:0}
+.bubble.pop{animation:pop .4s cubic-bezier(.3,1.6,.5,1)}
+
+.lcd{position:relative;cursor:pointer;background:linear-gradient(180deg,#a9cd60,#93b84b);border-radius:6px;padding:14px 16px 12px;color:#1f2e10;font-family:var(--mono);font-size:18.5px;line-height:1.45;min-height:150px;margin:6px;display:flex;flex-direction:column;
+  box-shadow:inset 0 0 0 3px #22301a,inset 0 0 22px rgba(0,0,0,.28),0 0 0 7px #161b1e,0 0 0 8px rgba(255,255,255,.07)}
+.lcd::before{content:"";position:absolute;inset:3px;border-radius:3px;pointer-events:none;background-image:linear-gradient(rgba(0,0,0,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.05) 1px,transparent 1px);background-size:3px 3px}
+.lcd-text::after{content:"▌";animation:blink 1s steps(2,start) infinite;opacity:.7}
+.lcd-kind{font-size:12px;letter-spacing:2.5px;opacity:.75;margin-bottom:6px}
+.lcd-kind:empty{display:none}
+.lcd-text{flex:1}
+.lcd-author{margin-top:10px;text-align:right;opacity:.78;font-size:14.5px;line-height:1.35;min-height:1.35em}
+.lcd-author .who{font-weight:700;opacity:1}
+.lcd-label{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;letter-spacing:1px;color:var(--faint);margin:0 8px 8px}
+.lcd-num{display:flex;align-items:center;gap:4px}
+.lcd-num input{width:5ch;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--text);font:inherit;font-size:12px;padding:2px 4px;text-align:center;-moz-appearance:textfield;appearance:textfield}
+.lcd-num input::-webkit-inner-spin-button,.lcd-num input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.lcd-num input:focus{outline:none;border-color:rgba(var(--accent-rgb),.7)}
+.lcd-skip{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.lcd-skip:hover{color:var(--muted)}
+.lcd-skip input{accent-color:var(--accent);margin:0;cursor:pointer}
+#lcdSeen{color:var(--muted)}
+.lcd-ctl{display:flex;gap:6px;align-items:center}
+.lcd-ctl button{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--muted);border-radius:7px;width:28px;height:22px;cursor:pointer;font-size:9px;display:grid;place-items:center}
+.lcd-ctl button:hover{background:rgba(255,255,255,.12);color:var(--text)}
+.lcd-bar{height:2px;margin:8px 8px 0;border-radius:2px;background:rgba(255,255,255,.06);overflow:hidden}
+.lcd-bar i{display:block;height:100%;width:0;background:rgba(169,205,96,.55)}
+.lcd-bar i.run{animation:fillbar linear forwards}
+.lcd:hover ~ .lcd-bar i.run{animation-play-state:paused}
+
+/* ---------- fidget cards ---------- */
+.fidget{padding:16px 16px 18px}
+.fidget h3{margin:0 0 12px;font-size:12px;letter-spacing:2.2px;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:baseline;font-weight:600;gap:8px}
+.fidget h3 small{letter-spacing:0;text-transform:none;font-weight:400;color:var(--faint);font-size:12px;text-align:right}
+.pill{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:var(--text);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:background .2s,transform .1s}
+.pill:hover{background:rgba(255,255,255,.12)}
+.pill:active{transform:scale(.94)}
+.pill.on{background:rgba(var(--accent-rgb),.2);border-color:rgba(var(--accent-rgb),.5);color:var(--accent)}
+
+/* oscilloscope */
+.scope-screen{position:relative;border-radius:12px;border:2px solid #24312d;overflow:hidden;cursor:pointer;
+  background-color:#06120d;
+  background-image:linear-gradient(rgba(102,255,178,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(102,255,178,.08) 1px,transparent 1px);
+  background-size:10% 16.6667%;background-position:-1px -1px;
+  box-shadow:inset 0 0 34px rgba(0,0,0,.85)}
+.scope-screen::after{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px dashed rgba(102,255,178,.18);pointer-events:none}
+.scope-screen canvas{display:block;width:100%;height:160px}
+.scope-read{position:absolute;left:10px;top:7px;font-family:var(--mono);font-size:11px;color:#66ffb2;opacity:.85;letter-spacing:.5px;pointer-events:none}
+.scope-panel{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding:0 6px}
+.scope-btns{display:flex;flex-direction:column;gap:8px;align-items:center}
+.knob{display:flex;flex-direction:column;align-items:center;gap:6px;user-select:none;touch-action:none;cursor:ns-resize;border-radius:12px;padding:2px}
+.knob-dial{width:50px;height:50px;border-radius:50%;position:relative;
+  background:radial-gradient(circle at 40% 32%,#6b787d 0,#323b3f 58%,transparent 60%),repeating-conic-gradient(#3c474b 0 6deg,#1f272a 6deg 12deg);
+  box-shadow:0 4px 10px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.15)}
+.knob-mark{position:absolute;left:50%;top:6px;width:3px;height:13px;margin-left:-1.5px;border-radius:2px;background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.knob-label{font-size:10px;letter-spacing:2px;color:var(--muted);font-family:var(--mono)}
+.knob.grab{cursor:grabbing}
+
+/* plasma */
+.plasma-wrap{display:flex;justify-content:center}
+#plasma{width:220px;height:250px;touch-action:none;cursor:pointer;display:block}
+
+/* lights out */
+.lo-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;max-width:250px;margin:4px auto 0}
+.lo{aspect-ratio:1;border-radius:50%;border:0;padding:0;cursor:pointer;background:radial-gradient(circle at 35% 30%,#3a4645,#141b1c 72%);box-shadow:inset 0 -2px 4px rgba(0,0,0,.6),0 0 0 2px #0a1011;transition:background .15s,box-shadow .15s,transform .1s}
+.lo.on{background:radial-gradient(circle at 35% 30%,#fff 0 9%,#ff8f80 22%,#ff3b52 55%,#7d0e20 100%);box-shadow:0 0 14px rgba(255,70,90,.75),0 0 0 2px #2a0d12}
+.lo:active{transform:scale(.88)}
+.lo-grid.win .lo{animation:lowave .8s ease both;animation-delay:calc(var(--i) * 55ms)}
+.lo-bar{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:13px;color:var(--muted)}
+.lo-bar b{color:var(--text)}
+.lo-msg{margin-top:10px;text-align:center;font-size:13px;color:var(--muted);min-height:18px}
+
+/* dip switch */
+.dip{display:flex;flex-direction:column;gap:5px;background:linear-gradient(180deg,#d23a43,#b02a33);padding:7px 12px 6px;border-radius:6px;width:max-content;margin:4px auto 0;box-shadow:inset 0 -3px 0 rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.25),0 6px 14px rgba(0,0,0,.45)}
+.dip-top{display:flex;justify-content:space-between;font-size:9px;letter-spacing:1px;color:rgba(255,255,255,.9);font-weight:700}
+.dip-row,.dip-nums{display:flex;gap:7px}
+.dip-sw{width:22px;height:42px;background:#2a1215;border:0;border-radius:3px;position:relative;cursor:pointer;padding:0;box-shadow:inset 0 2px 4px rgba(0,0,0,.6)}
+.dip-sw span{position:absolute;left:3px;right:3px;height:17px;bottom:3px;background:linear-gradient(#fffdf8,#d8d2c8);border-radius:2px;box-shadow:0 1px 2px rgba(0,0,0,.5);transition:bottom .16s cubic-bezier(.4,1.8,.5,1)}
+.dip-sw.on span{bottom:22px}
+.dip-nums span{width:22px;text-align:center;font-size:10px;color:rgba(255,255,255,.85);font-family:var(--mono)}
+.dip-read{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px;text-align:center}
+.dip-read div{background:rgba(0,0,0,.28);border-radius:10px;padding:8px 4px;font-family:var(--mono)}
+.dip-read small{display:block;color:var(--faint);font-size:10px;letter-spacing:2px;margin-bottom:2px}
+.dip-read b{font-size:19px;color:var(--accent);font-weight:400;transition:color .5s}
+.dip-msg{margin-top:10px;text-align:center;color:var(--muted);font-size:13px;min-height:36px}
+
+/* ---------- footer / toast / flash ---------- */
+.hint{margin-top:26px;text-align:center;color:var(--faint);font-size:12px;line-height:2}
+kbd{font-family:var(--mono);font-size:11px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-bottom-width:2px;border-radius:5px;padding:1px 6px;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,40px);opacity:0;background:#f4efe2;color:#1e1b18;padding:12px 22px;border-radius:999px;font-weight:600;box-shadow:0 10px 40px rgba(0,0,0,.5);transition:transform .4s cubic-bezier(.3,1.5,.5,1),opacity .3s;z-index:50;pointer-events:none;max-width:calc(100vw - 32px);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.flash{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 30% 40%,rgba(var(--accent-rgb),.35),transparent 60%);opacity:0;z-index:40}
+.flash.go{animation:flash 1.4s ease-out}
+
+/* ---------- settings dialog ---------- */
+dialog{border:1px solid var(--card-border);background:#101d21;color:var(--text);border-radius:20px;padding:0;width:min(460px,calc(100vw - 32px));box-shadow:0 30px 80px rgba(0,0,0,.6)}
+dialog::backdrop{background:rgba(3,8,10,.6);backdrop-filter:blur(3px)}
+.set-form{padding:22px 22px 20px}
+.set-form h2{margin:0 0 4px;font-size:20px}
+.set-form .sub{margin:0 0 18px;color:var(--muted);font-size:13px}
+.set-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.field input[type=number],.field select{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text);padding:9px 10px;font:inherit;font-size:15px}
+.field select option{background:#101d21}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid rgba(255,255,255,.06);font-size:14px}
+.row input[type=range]{flex:1;max-width:200px;accent-color:var(--accent)}
+.num-sm{width:84px;flex:none;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text);padding:7px 10px;font:inherit;font-size:15px}
+.hint-sm{display:block;color:var(--faint);font-size:12px}
+.sw{appearance:none;-webkit-appearance:none;width:42px;height:24px;border-radius:12px;background:#2a3538;position:relative;cursor:pointer;transition:background .2s;flex:none;margin:0}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#cfd8d6;transition:transform .2s}
+.sw:checked{background:var(--accent)}
+.sw:checked::after{transform:translateX(18px);background:#fff}
+.sound-row{display:flex;gap:8px;align-items:flex-end}
+.sound-row .field{flex:1}
+.btn{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.07);color:var(--text);border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:600;font-size:14px}
+.btn:hover{background:rgba(255,255,255,.13)}
+.btn.primary{background:var(--accent);color:#10181b;border-color:transparent}
+.btn.link{background:none;border:0;color:var(--faint);padding:9px 4px;font-weight:500}
+.btn.link:hover{color:var(--text)}
+.dlg-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:16px}
+.dlg-actions div{display:flex;gap:8px}
+
+/* ---------- keyframes ---------- */
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes blink{to{opacity:.15}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes bouncy{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-14px) scale(1.06,.94)}60%{transform:translateY(0) scale(.94,1.06)}100%{transform:translateY(0) scale(1)}}
+@keyframes halo{50%{opacity:.55}}
+@keyframes eyeblink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+@keyframes swing{0%{transform:rotate(0)}25%{transform:rotate(14deg)}55%{transform:rotate(-9deg)}80%{transform:rotate(4deg)}100%{transform:rotate(0)}}
+@keyframes fillbar{to{width:100%}}
+@keyframes pop{0%{transform:scale(.92)}100%{transform:scale(1)}}
+@keyframes flash{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
+@keyframes lowave{0%,100%{}40%{background:radial-gradient(circle at 35% 30%,#fff 0 9%,#9dffc8 25%,#2fd27f 60%,#0c5a33 100%);box-shadow:0 0 14px rgba(60,230,140,.8),0 0 0 2px #0a1011}}
+
+@media (max-width:520px){
+  .app{padding:14px 16px 24px}
+  .mode-switch button{font-size:12.5px}
+  .brand .tag{display:none}
+  .today{display:none}
+  .ctl.primary{min-width:128px}
+  .set-grid{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  .orbit-g,.atom-spin,.sparky svg,.sparky .eyes,.sparky.lit .halo{animation:none!important}
+}
+</style>
+</head>
+<body data-mode="work">
+<canvas id="bg" aria-hidden="true"></canvas>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <svg class="atom" viewBox="0 0 48 48" aria-hidden="true">
+        <g class="atom-spin">
+          <ellipse cx="24" cy="24" rx="21" ry="7.5"/>
+          <ellipse cx="24" cy="24" rx="21" ry="7.5" transform="rotate(60 24 24)"/>
+          <ellipse cx="24" cy="24" rx="21" ry="7.5" transform="rotate(120 24 24)"/>
+          <circle class="e" r="2.3"><animateMotion dur="2.6s" repeatCount="indefinite" path="M3,24 a21,7.5 0 1,0 42,0 a21,7.5 0 1,0 -42,0"/></circle>
+          <g transform="rotate(60 24 24)"><circle class="e" r="2.3"><animateMotion dur="3.4s" repeatCount="indefinite" path="M3,24 a21,7.5 0 1,0 42,0 a21,7.5 0 1,0 -42,0"/></circle></g>
+          <g transform="rotate(120 24 24)"><circle class="e" r="2.3"><animateMotion dur="3s" repeatCount="indefinite" path="M45,24 a21,7.5 0 1,1 -42,0 a21,7.5 0 1,1 42,0"/></circle></g>
+        </g>
+        <circle class="nucleus" cx="24" cy="24" r="4"/>
+      </svg>
+      <div>
+        <h1>Pomod<span class="ohm">Ω</span>hm</h1>
+        <p class="tag">a low-resistance focus timer</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span class="today" id="todayStats"></span>
+      <button class="icon-btn" id="muteBtn" title="Mute (M)" aria-label="Mute"></button>
+      <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <div class="stage">
+      <section class="card timer-card" aria-label="Timer">
+        <div class="mode-switch" role="tablist">
+          <button data-mode="work" role="tab" class="active">Focus</button>
+          <button data-mode="short" role="tab">Short break</button>
+          <button data-mode="long" role="tab">Long break</button>
+          <span class="slider" aria-hidden="true"></span>
+        </div>
+
+        <div class="dial-wrap">
+          <svg class="dial" viewBox="0 0 340 340" aria-hidden="true">
+            <g id="ticks"></g>
+            <circle class="track" cx="170" cy="170" r="140"/>
+            <circle class="progress" id="prog" cx="170" cy="170" r="140" transform="rotate(-90 170 170)"/>
+            <g class="head-g" id="headG"><circle class="head" cx="170" cy="30" r="7"/></g>
+            <g class="orbit-g">
+              <circle class="orbit" cx="170" cy="170" r="164"/>
+              <circle class="electron" cx="170" cy="6" r="3.6"/>
+              <circle class="electron" cx="170" cy="334" r="3.6"/>
+            </g>
+          </svg>
+          <div class="dial-center">
+            <div class="status"><span class="status-dot"></span><span id="statusText">READY</span></div>
+            <div class="seven" id="sevenSeg" role="timer" aria-live="off"></div>
+            <div class="charge" id="chargeText"></div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <button class="ctl secondary" id="resetBtn" title="Reset (R)" aria-label="Reset">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.7-6.2"/><path d="M3 4v5h5"/></svg>
+          </button>
+          <button class="ctl primary" id="startBtn"></button>
+          <button class="ctl secondary" id="skipBtn" title="Skip (S)" aria-label="Skip to next">
+            <svg viewBox="0 0 24 24"><path d="M5 5.5l10 6.5-10 6.5z" fill="currentColor"/><path d="M18.5 5.5v13" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+
+        <div class="cycle">
+          <div class="leds" id="cycleLeds"></div>
+          <span id="cycleLabel"></span>
+        </div>
+
+        <input id="taskInput" class="task" placeholder="✎ What are you working on?" maxlength="80" autocomplete="off">
+      </section>
+
+      <section class="card inspo" aria-label="Encouragement">
+        <div class="sparky-row">
+          <button class="sparky" id="sparky" data-face="idle" aria-label="Sparky the lightbulb — click for encouragement">
+            <svg viewBox="0 0 100 140" aria-hidden="true">
+              <defs>
+                <radialGradient id="haloGrad">
+                  <stop offset="0" style="stop-color:var(--accent);stop-opacity:.6"/>
+                  <stop offset="1" style="stop-color:var(--accent);stop-opacity:0"/>
+                </radialGradient>
+              </defs>
+              <circle class="halo" cx="50" cy="44" r="52" fill="url(#haloGrad)"/>
+              <path class="glass" d="M38 80 C38 70 18 62 18 42 A32 32 0 0 1 82 42 C82 62 62 70 62 80 Z"/>
+              <path class="shine" d="M27 36 A23 23 0 0 1 39 21"/>
+              <g class="f f-idle">
+                <g class="eyes"><ellipse cx="41" cy="44" rx="3" ry="3.8"/><ellipse cx="59" cy="44" rx="3" ry="3.8"/></g>
+                <path class="ln" d="M45 54 Q50 58.5 55 54"/>
+              </g>
+              <g class="f f-focus">
+                <path class="ln" d="M35.5 36.5 L45 38.8 M64.5 36.5 L55 38.8"/>
+                <g class="eyes"><ellipse cx="41" cy="44.5" rx="3" ry="3.3"/><ellipse cx="59" cy="44.5" rx="3" ry="3.3"/></g>
+                <path class="ln" d="M45.5 55 Q50 57.5 54.5 55"/>
+              </g>
+              <g class="f f-break">
+                <path class="ln" d="M37 45.5 Q41 41 45 45.5 M55 45.5 Q59 41 63 45.5"/>
+                <path class="ln" d="M44 53 Q50 60 56 53"/>
+              </g>
+              <g class="f f-happy">
+                <path class="ln" d="M37 40.5 L42.5 44 L37 47.5 M63 40.5 L57.5 44 L63 47.5"/>
+                <path class="mouth-open" d="M42.5 52 Q50 64 57.5 52 Z"/>
+              </g>
+              <circle class="cheek" cx="34" cy="52" r="3.6"/><circle class="cheek" cx="66" cy="52" r="3.6"/>
+              <rect class="base" x="37" y="80" width="26" height="6.5" rx="3"/>
+              <rect class="base" x="38" y="86.8" width="24" height="6.5" rx="3"/>
+              <rect class="base" x="39" y="93.6" width="22" height="6.5" rx="3"/>
+              <path class="tip" d="M43 100 H57 L54 106 H46 Z"/>
+              <g class="tag">
+                <path class="tag-string" d="M37.5 90 L47 112 M62.5 90 L53 112"/>
+                <rect class="tag-clip" x="46" y="109" width="8" height="5" rx="1.2"/>
+                <rect class="tag-card" x="22" y="112" width="56" height="26" rx="4"/>
+                <path class="tag-band" d="M22 116 a4 4 0 0 1 4 -4 h48 a4 4 0 0 1 4 4 v4 h-56 z"/>
+                <text class="tag-hello" x="50" y="118.4" text-anchor="middle">HELLO, MY NAME IS</text>
+                <text class="tag-name" x="50" y="133" text-anchor="middle">SPARKY</text>
+              </g>
+            </svg>
+          </button>
+          <div class="bubble" id="bubble" aria-live="polite"></div>
+        </div>
+        <div class="lcd-label">
+          <span class="lcd-num" title="Type a number to jump to it">#<input id="lcdNum" type="number" min="1" aria-label="Jump to quote number"> / <span id="lcdTotal"></span></span>
+          <label class="lcd-skip" title="Random picks skip ones you've already seen this session"><input type="checkbox" id="lcdSkip"> skip seen <span id="lcdSeen"></span></label>
+          <span class="lcd-ctl"><button id="lcdPrev" aria-label="Previous quote">◀</button><button id="lcdNext" aria-label="Next quote">▶</button></span>
+        </div>
+        <div class="lcd" id="lcd" title="Click for the next one · hover to pause">
+          <div class="lcd-kind" id="lcdKind"></div>
+          <div class="lcd-text" id="lcdText"></div>
+          <div class="lcd-author" id="lcdAuthor"></div>
+        </div>
+        <div class="lcd-bar" aria-hidden="true"><i id="lcdBar"></i></div>
+      </section>
+    </div>
+
+    <aside class="lab lab-left" aria-label="Fidget Lab">
+      <div class="lab-title"><h2>Fidget Lab 🧪</h2><span>for idle hands</span></div>
+
+      <section class="card fidget">
+        <h3>Oscilloscope <small>drag or scroll the knobs</small></h3>
+        <div class="scope-screen" id="scopeScreen" title="Click to change waveform">
+          <canvas id="scope"></canvas>
+          <div class="scope-read" id="scopeRead"></div>
+        </div>
+        <div class="scope-panel">
+          <div class="knob" id="kFreq" tabindex="0" role="slider" aria-label="Frequency"><div class="knob-dial"><span class="knob-mark"></span></div><span class="knob-label">FREQ</span></div>
+          <div class="scope-btns">
+            <button class="pill" id="waveBtn">SINE</button>
+            <button class="pill" id="holdBtn">HOLD</button>
+          </div>
+          <div class="knob" id="kAmp" tabindex="0" role="slider" aria-label="Amplitude"><div class="knob-dial"><span class="knob-mark"></span></div><span class="knob-label">AMPL</span></div>
+        </div>
+      </section>
+
+      <section class="card fidget">
+        <h3>Plasma globe <small>hover · press &amp; hold</small></h3>
+        <div class="plasma-wrap"><canvas id="plasma" width="220" height="250"></canvas></div>
+      </section>
+    </aside>
+
+    <aside class="lab lab-right" aria-label="More fidgets">
+      <div class="lab-title"><span>…&amp; curious minds ⚙</span></div>
+
+      <section class="card fidget">
+        <h3>Lights Out <small>mini-game</small></h3>
+        <div class="lo-grid" id="loGrid"></div>
+        <div class="lo-bar"><span>moves <b id="loMoves">0</b></span><button class="pill" id="loNew">SCRAMBLE</button></div>
+        <div class="lo-msg" id="loMsg"></div>
+      </section>
+
+      <section class="card fidget">
+        <h3>Byte flipper <small>8-bit DIP switch</small></h3>
+        <div class="dip">
+          <div class="dip-top"><span>ON ▲</span><span>DIP-8</span></div>
+          <div class="dip-row" id="dipRow"></div>
+          <div class="dip-nums"><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span><span>0</span></div>
+        </div>
+        <div class="dip-read">
+          <div><small>DEC</small><b id="dipDec">0</b></div>
+          <div><small>HEX</small><b id="dipHex">0x00</b></div>
+          <div><small>ASCII</small><b id="dipChr">·</b></div>
+        </div>
+        <div class="dip-msg" id="dipMsg"></div>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="hint">
+    <kbd>Space</kbd> start / pause &nbsp;·&nbsp; <kbd>R</kbd> reset &nbsp;·&nbsp; <kbd>S</kbd> skip &nbsp;·&nbsp; <kbd>M</kbd> mute &nbsp;·&nbsp; click any empty space for sparks ⚡
+  </footer>
+</div>
+
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast" role="status"></div>
+
+<dialog id="settings">
+  <form class="set-form" id="setForm" method="dialog">
+    <h2>Settings</h2>
+    <p class="sub">Tune your circuit. Times are in minutes.</p>
+    <div class="set-grid">
+      <label class="field">Focus<input type="number" name="work" min="1" max="99" required></label>
+      <label class="field">Short break<input type="number" name="short" min="1" max="60" required></label>
+      <label class="field">Long break<input type="number" name="long" min="1" max="99" required></label>
+      <label class="field">Long break every<input type="number" name="interval" min="2" max="12" required></label>
+    </div>
+    <div class="row"><span>Auto-start breaks</span><input class="sw" type="checkbox" name="autoBreak"></div>
+    <div class="row"><span>Auto-start focus sessions</span><input class="sw" type="checkbox" name="autoWork"></div>
+    <div class="row"><span>Sparky's pep talks &amp; fun facts</span><input class="sw" type="checkbox" name="encourage"></div>
+    <div class="row"><span>New quote every <small class="hint-sm">(seconds · 0 = only when clicked)</small></span><input class="num-sm" type="number" name="quoteSec" min="0" max="3600" step="5"></div>
+    <div class="row"><span>Fidget / button sounds</span><input class="sw" type="checkbox" name="uiSounds"></div>
+    <div class="row sound-row">
+      <label class="field">Alarm sound
+        <select name="sound">
+          <option value="glass">Glass chime</option>
+          <option value="musicbox">Music box</option>
+          <option value="marimba">Marimba</option>
+          <option value="synth">Retro synth</option>
+        </select>
+      </label>
+      <button type="button" class="btn" id="testSound">▶ Test</button>
+    </div>
+    <div class="row"><span>Volume</span><input type="range" name="volume" min="0" max="1" step="0.05"></div>
+    <div class="dlg-actions">
+      <button type="button" class="btn link" id="defaultsBtn">Reset to defaults</button>
+      <div>
+        <button type="button" class="btn" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn primary">Save</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(() => {
+'use strict';
+
+/* ================= helpers ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const pad = n => String(n).padStart(2, '0');
+const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const lastPick = new Map();
+const pick = a => { let x; do { x = a[(Math.random() * a.length) | 0]; } while (a.length > 1 && x === lastPick.get(a)); lastPick.set(a, x); return x; };
+const angDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('pomodohm.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('pomodohm.' + k, JSON.stringify(v)); } catch (e) {} }
+};
+
+const DEFAULTS = { work: 25, short: 5, long: 15, interval: 4, autoBreak: true, autoWork: false, sound: 'glass', volume: 0.7, uiSounds: true, encourage: true, quoteSec: 60 };
+const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
+let muted = !!store.get('muted', false);
+
+const MODE_RGB = { work: [255, 180, 76], short: [79, 224, 210], long: [181, 155, 255] };
+const MODE_NAME = { work: 'Focus', short: 'Short break', long: 'Long break' };
+
+/* ================= words ================= */
+// [kind, text, who, note]   kind: 'q' = quote, 'f' = spotlight (a short fact about someone,
+// used where there isn't a well-documented quote — no made-up quotes here!)
+const QUOTES = [
+  // --- physics & Nobel laureates ---
+  ['q', "Nothing in life is to be feared, it is only to be understood.", 'Marie Curie', 'Nobel in Physics 1903 & Chemistry 1911'],
+  ['q', "Be less curious about people and more curious about ideas.", 'Marie Curie', 'Nobel in Physics & Chemistry'],
+  ['q', "The first principle is that you must not fool yourself — and you are the easiest person to fool.", 'Richard Feynman', 'Nobel Physics 1965, QED'],
+  ['q', "What I cannot create, I do not understand.", 'Richard Feynman', 'Nobel Physics 1965'],
+  ['q', "For a successful technology, reality must take precedence over public relations, for nature cannot be fooled.", 'Richard Feynman', 'Nobel Physics 1965, Challenger inquiry'],
+  ['q', "I would rather have questions that can't be answered than answers that can't be questioned.", 'Richard Feynman', 'Nobel Physics 1965'],
+  ['q', "There's plenty of room at the bottom.", 'Richard Feynman', '1959 talk that predicted nanotech'],
+  ['q', "Imagination is more important than knowledge.", 'Albert Einstein', ''],
+  ['q', "Life is like riding a bicycle. To keep your balance you must keep moving.", 'Albert Einstein', ''],
+  ['q', "Anyone who has never made a mistake has never tried anything new.", 'Albert Einstein', ''],
+  ['q', "If I have seen further it is by standing on the shoulders of giants.", 'Isaac Newton', ''],
+  ['q', "An expert is a person who has made all the mistakes that can be made in a very narrow field.", 'Niels Bohr', 'Nobel Physics 1922, atomic model'],
+  ['q', "All science is either physics or stamp collecting.", 'Ernest Rutherford', 'Nobel Chemistry 1908, discovered the nucleus'],
+  ['q', "There are two possible outcomes: if the result confirms the hypothesis, then you've made a measurement. If the result is contrary to the hypothesis, then you've made a discovery.", 'Enrico Fermi', 'Nobel Physics 1938, first nuclear reactor'],
+  ['q', "The best way to have a good idea is to have lots of ideas.", 'Linus Pauling', 'Nobel Chemistry 1954 & Peace 1962'],
+  ['q', "Science makes people reach selflessly for truth and objectivity.", 'Lise Meitner', 'physicist, co-discovered nuclear fission'],
+  ['q', "I was captured for life by chemistry and by crystals.", 'Dorothy Hodgkin', 'Nobel Chemistry 1964, penicillin structure'],
+  ['q', "Science progresses best when observations force us to alter our preconceptions.", 'Vera Rubin', 'astronomer, evidence for dark matter'],
+  ['q', "I don't think of myself as a woman in science. I think of myself as a scientist.", 'Donna Strickland', 'Nobel Physics 2018, ultrafast lasers'],
+  ['q', "Thoroughly conscious ignorance is the prelude to every real advance in science.", 'James Clerk Maxwell', 'unified electricity, magnetism & light'],
+  ['q', "Nothing is too wonderful to be true, if it be consistent with the laws of nature.", 'Michael Faraday', 'discovered electromagnetic induction'],
+  ['q', "Work. Finish. Publish.", 'Michael Faraday', 'his advice to young scientists'],
+  ['q', "When you can measure what you are speaking about, and express it in numbers, you know something about it.", 'Lord Kelvin', 'physicist, absolute temperature scale'],
+  ['q', "Look up at the stars and not down at your feet.", 'Stephen Hawking', 'theoretical physicist, black holes'],
+  ['q', "The good thing about science is that it's true whether or not you believe in it.", 'Neil deGrasse Tyson', 'astrophysicist'],
+  ['q', "Science is a way of thinking much more than it is a body of knowledge.", 'Carl Sagan', 'astronomer, host of Cosmos'],
+  ['q', "If you wish to make an apple pie from scratch, you must first invent the universe.", 'Carl Sagan', 'astronomer, host of Cosmos'],
+  ['q', "The most exciting phrase to hear in science… is not “Eureka!” but “That's funny…”", 'Isaac Asimov', 'biochemist & sci-fi author'],
+  ['q', "Science and everyday life cannot and should not be separated.", 'Rosalind Franklin', 'X-ray crystallographer, DNA structure'],
+  ['q', "Measure what is measurable, and make measurable what is not so.", 'Galileo Galilei', ''],
+
+  // --- electricity, radio & RF ---
+  ['q', "The present is theirs; the future, for which I really worked, is mine.", 'Nikola Tesla', 'AC power & induction motor pioneer'],
+  ['q', "If you want to find the secrets of the universe, think in terms of energy, frequency and vibration.", 'Nikola Tesla', 'AC power pioneer'],
+  ['q', "I have not failed. I've just found 10,000 ways that won't work.", 'Thomas Edison', 'inventor, phonograph & light bulb'],
+  ['q', "Genius is one percent inspiration and ninety-nine percent perspiration.", 'Thomas Edison', 'inventor'],
+  ['q', "There's a way to do it better — find it.", 'Thomas Edison', 'inventor'],
+  ['q', "Energy and persistence conquer all things.", 'Benjamin Franklin', 'founding father, lightning experiments'],
+  ['q', "It's of no use whatsoever… this is just an experiment that proves Maestro Maxwell was right.", 'Heinrich Hertz', 'on radio waves, which he discovered'],
+  ['q', "Every day sees humanity more victorious in the struggle with space and time.", 'Guglielmo Marconi', 'radio pioneer, Nobel Physics 1909'],
+  ['q', "Should I refuse a good dinner simply because I do not understand the process of digestion?", 'Oliver Heaviside', 'telegraph engineer, gave Maxwell’s equations their modern form'],
+  ['q', "Mathematics is an experimental science, and definitions do not come first, but later on.", 'Oliver Heaviside', 'self-taught EE & mathematician'],
+  ['q', "Information is the resolution of uncertainty.", 'Claude Shannon', 'father of information theory'],
+  ['q', "I just wondered how things were put together.", 'Claude Shannon', 'father of information theory'],
+  ['q', "My favorite programming language is solder.", 'Bob Pease', 'analog engineer, National Semiconductor'],
+  ['q', "Any sufficiently advanced technology is indistinguishable from magic.", 'Arthur C. Clarke', 'sci-fi author, proposed geostationary satellites'],
+
+  // --- semiconductors & chip makers ---
+  ['q', "Don't be encumbered by history. Go off and do something wonderful.", 'Robert Noyce', 'co-founder of Intel, co-inventor of the IC'],
+  ['q', "If everything you try works, you aren't trying hard enough.", 'Gordon Moore', 'Intel co-founder, Moore’s Law'],
+  ['q', "Success breeds complacency. Complacency breeds failure. Only the paranoid survive.", 'Andy Grove', 'Intel CEO'],
+  ['q', "Bad companies are destroyed by crises; good companies survive them; great companies are improved by them.", 'Andy Grove', 'Intel CEO'],
+  ['q', "I wish upon you ample doses of pain and suffering.", 'Jensen Huang', 'NVIDIA co-founder & CEO, on building resilience'],
+  ['q', "Run, don't walk.", 'Jensen Huang', 'NVIDIA CEO, to graduates in 2023'],
+  ['q', "The more you buy, the more you save.", 'Jensen Huang', 'NVIDIA CEO, keynote catchphrase'],
+  ['q', "Run towards the hardest problems.", 'Lisa Su', 'AMD CEO, led its turnaround'],
+  ['q', "Listen to the technology; find out what it's telling you.", 'Carver Mead', 'VLSI pioneer, coined “Moore’s Law”'],
+
+  // --- computing & software ---
+  ['q', "The more I study, the more insatiable do I feel my genius for it to be.", 'Ada Lovelace', 'wrote the first computer program'],
+  ['q', "The most dangerous phrase in the language is: “We've always done it this way.”", 'Grace Hopper', 'computing pioneer, COBOL'],
+  ['q', "A ship in port is safe, but that's not what ships are built for.", 'Grace Hopper', 'computing pioneer, US Navy rear admiral'],
+  ['q', "It's easier to ask forgiveness than it is to get permission.", 'Grace Hopper', 'computing pioneer'],
+  ['q', "We can only see a short distance ahead, but we can see plenty there that needs to be done.", 'Alan Turing', 'father of computer science'],
+  ['q', "Simplicity is prerequisite for reliability.", 'Edsger W. Dijkstra', 'computer scientist, Turing Award 1972'],
+  ['q', "The purpose of computing is insight, not numbers.", 'Richard Hamming', 'Bell Labs, Hamming codes'],
+  ['q', "If you don't work on important problems, it's not likely that you'll do important work.", 'Richard Hamming', 'Bell Labs, Hamming codes'],
+  ['q', "The best way to predict the future is to invent it.", 'Alan Kay', 'computer scientist, Turing Award 2003'],
+  ['q', "Premature optimization is the root of all evil.", 'Donald Knuth', 'The Art of Computer Programming'],
+  ['q', "When in doubt, use brute force.", 'Ken Thompson', 'co-creator of Unix'],
+  ['q', "Talk is cheap. Show me the code.", 'Linus Torvalds', 'creator of Linux'],
+  ['q', "Adding manpower to a late software project makes it later.", 'Fred Brooks', 'IBM System/360 lead, The Mythical Man-Month'],
+  ['q', "All creative people want to do the unexpected.", 'Hedy Lamarr', 'actress, co-invented frequency hopping'],
+
+  // --- tech founders & leaders ---
+  ['q', "Stay hungry, stay foolish.", 'Steve Jobs', 'Apple co-founder, quoting the Whole Earth Catalog'],
+  ['q', "Never trust a computer you can't throw out a window.", 'Steve Wozniak', 'Apple co-founder, designed the Apple I & II'],
+  ['q', "Most people overestimate what they can do in one year and underestimate what they can do in ten years.", 'Bill Gates', 'Microsoft co-founder'],
+  ['q', "Don't be a know-it-all, be a learn-it-all.", 'Satya Nadella', 'Microsoft CEO'],
+  ['q', "A problem well stated is a problem half solved.", 'Charles Kettering', 'engineer, invented the electric car starter'],
+  ['q', "If you've always done it that way, it's probably wrong.", 'Charles Kettering', 'head of GM Research'],
+
+  // --- engineering & space ---
+  ['q', "Scientists study the world as it is; engineers create the world that has never been.", 'Theodore von Kármán', 'aerospace engineer, co-founded JPL'],
+  ['q', "Research is what I'm doing when I don't know what I'm doing.", 'Wernher von Braun', 'rocket engineer, Saturn V'],
+  ['q', "Like what you do, and then you will do your best.", 'Katherine Johnson', 'NASA mathematician, Apollo trajectories'],
+  ['q', "Never be limited by other people's limited imaginations.", 'Mae Jemison', 'engineer, first Black woman in space'],
+  ['q', "That's one small step for man, one giant leap for mankind.", 'Neil Armstrong', 'aerospace engineer, first person on the Moon'],
+  ['q', "Dream, dream, dream. Dreams transform into thoughts and thoughts result in action.", 'A. P. J. Abdul Kalam', 'aerospace scientist, President of India'],
+  ['q', "To engineer is human.", 'Henry Petroski', 'civil engineer & author'],
+  ['q', "Simplicity is the ultimate sophistication.", 'Leonardo da Vinci', 'artist & engineer'],
+  ['q', "Give me a place to stand, and I shall move the Earth.", 'Archimedes', 'mathematician, the lever & buoyancy'],
+
+  // --- mathematicians ---
+  ['q', "It is not knowledge, but the act of learning, not possession but the act of getting there, which grants the greatest enjoyment.", 'Carl Friedrich Gauss', 'the “Prince of Mathematicians”'],
+  ['q', "Read Euler, read Euler, he is the master of us all.", 'Pierre-Simon Laplace', 'mathematician, about Leonhard Euler'],
+  ['q', "Nothing takes place in the world whose meaning is not that of some maximum or minimum.", 'Leonhard Euler', 'most prolific mathematician ever'],
+  ['q', "We must know. We will know.", 'David Hilbert', 'mathematician, Hilbert’s 23 problems'],
+  ['q', "An equation for me has no meaning unless it expresses a thought of God.", 'Srinivasa Ramanujan', 'self-taught mathematical genius'],
+  ['q', "My brain is open.", 'Paul Erdős', 'mathematician, ~1,500 papers'],
+  ['q', "Beauty is the first test: there is no permanent place in the world for ugly mathematics.", 'G. H. Hardy', 'number theorist, mentored Ramanujan'],
+  ['q', "Mathematics is the art of giving the same name to different things.", 'Henri Poincaré', 'mathematician, chaos theory pioneer'],
+  ['q', "If people do not believe that mathematics is simple, it is only because they do not realize how complicated life is.", 'John von Neumann', 'mathematician, computer architecture'],
+  ['q', "The beauty of mathematics only shows itself to more patient followers.", 'Maryam Mirzakhani', 'first woman to win the Fields Medal'],
+  ['q', "If you can't solve a problem, then there is an easier problem you can solve: find it.", 'George Pólya', 'mathematician, How to Solve It'],
+  ['q', "Mathematics compares the most diverse phenomena and discovers the secret analogies that unite them.", 'Joseph Fourier', 'Fourier series & transform'],
+  ['q', "Divide each difficulty into as many parts as is feasible and necessary to resolve it.", 'René Descartes', 'philosopher, Cartesian coordinates'],
+
+  // --- just for fun ---
+  ['q', "V = I × R. Some things never change.", 'Georg Ohm', 'probably'],
+  ['q', "τ = RC. Patience is just a time constant.", 'the lab notebook', ''],
+
+  // --- spotlights: semiconductors ---
+  ['f', "Built the first integrated circuit at Texas Instruments in 1958 — on a sliver of germanium.", 'Jack Kilby', 'TI engineer, Nobel Physics 2000'],
+  ['f', "Invented the transistor at Bell Labs in 1947, kicking off the electronics age.", 'Bardeen, Brattain & Shockley', 'Nobel Physics 1956'],
+  ['f', "The only person to win the Nobel Prize in Physics twice — for the transistor and for superconductivity.", 'John Bardeen', 'Nobel Physics 1956 & 1972'],
+  ['f', "Built the first MOSFET at Bell Labs in 1959. It's now the most-manufactured device in human history.", 'Mohamed Atalla & Dawon Kahng', 'Bell Labs engineers'],
+  ['f', "Co-invented the integrated circuit in 1959 using the planar silicon process — the way chips are still made.", 'Robert Noyce', 'Fairchild & Intel co-founder'],
+  ['f', "Predicted in 1965 that transistor counts would keep doubling on a regular schedule.", 'Gordon Moore', 'Intel co-founder, Moore’s Law'],
+  ['f', "Led the design of the Intel 4004 (1971), the first commercial microprocessor — about 2,300 transistors.", 'Federico Faggin', 'chip designer, Intel 4004'],
+  ['f', "Founded TSMC in 1987 and invented the pure-play foundry: a fab that builds chips for everyone else.", 'Morris Chang', 'TSMC founder'],
+  ['f', "Became AMD's CEO in 2014 and led one of the biggest turnarounds in tech history.", 'Lisa Su', 'AMD CEO, MIT electrical engineer'],
+  ['f', "Co-founded NVIDIA in 1993 at a Denny's — then bet the company on GPUs for parallel computing.", 'Jensen Huang', 'NVIDIA co-founder & CEO'],
+  ['f', "Their 1980 textbook let students design chips, sparking the VLSI revolution.", 'Lynn Conway & Carver Mead', 'VLSI pioneers'],
+  ['f', "Designed the ARM instruction set in the 1980s — now inside billions of phones.", 'Sophie Wilson', 'ARM co-designer'],
+  ['f', "Invented the efficient blue LED, which made bright white LED lighting possible.", 'Akasaki, Amano & Nakamura', 'Nobel Physics 2014'],
+  ['f', "Discovered electron tunneling in semiconductors with the tunnel diode.", 'Leo Esaki', 'Nobel Physics 1973'],
+  ['f', "Developed semiconductor heterostructures — used in laser diodes and fast transistors.", 'Zhores Alferov & Herbert Kroemer', 'Nobel Physics 2000'],
+  ['f', "Invented the CCD image sensor at Bell Labs in 1969 — the eye of early digital cameras.", 'Willard Boyle & George Smith', 'Nobel Physics 2009'],
+  ['f', "ASML's EUV machines print the most advanced chips using 13.5 nm light made by blasting tin droplets with lasers.", 'ASML', 'Dutch lithography company'],
+
+  // --- spotlights: radio, RF & signals ---
+  ['f', "Invented the superheterodyne receiver and FM radio — still the basis of most radios.", 'Edwin Armstrong', 'radio engineer'],
+  ['f', "Sketched the negative-feedback amplifier in 1927 on a newspaper during his ferry commute.", 'Harold Black', 'Bell Labs engineer'],
+  ['f', "Showed you need to sample at twice a signal's bandwidth to capture it fully.", 'Harry Nyquist', 'Bell Labs engineer'],
+  ['f', "Invented the Smith chart in 1939 — still every RF engineer's favorite plot.", 'Phillip Smith', 'Bell Labs engineer'],
+  ['f', "Demonstrated millimeter-wave radio in the 1890s, decades ahead of his time.", 'Jagadish Chandra Bose', 'physicist, radio pioneer'],
+  ['f', "Made the first radio broadcast of voice and music on Christmas Eve, 1906.", 'Reginald Fessenden', 'radio pioneer'],
+  ['f', "Co-founded Qualcomm and brought CDMA to mobile phones.", 'Irwin Jacobs & Andrew Viterbi', 'Qualcomm co-founders'],
+  ['f', "Showed that glass fiber could carry light over long distances — the backbone of the internet.", 'Charles Kao', 'Nobel Physics 2009, “father of fiber optics”'],
+  ['f', "Co-patented frequency hopping in 1942 — an ancestor of Wi-Fi and Bluetooth.", 'Hedy Lamarr', 'actress & inventor'],
+  ['f', "His 1937 master's thesis showed relay circuits could do Boolean logic — the basis of every digital circuit.", 'Claude Shannon', 'father of information theory'],
+
+  // --- spotlights: science & math ---
+  ['f', "Proved that every symmetry in physics comes with a conservation law.", 'Emmy Noether', 'mathematician, Noether’s theorem'],
+  ['f', "Her 1956 experiment showed nature can tell left from right (parity violation).", 'Chien-Shiung Wu', 'experimental physicist'],
+  ['f', "Led the team that wrote the Apollo flight software and helped coin the term “software engineering.”", 'Margaret Hamilton', 'MIT software engineer'],
+];
+const ENCOURAGE = [
+  'Resistance is futile. Well — 10 kΩ of it is useful. Keep going!',
+  'Current is flowing nicely. Stay in the loop! 🔁',
+  'Steady current beats big sparks. You’re doing great.',
+  'Every minute here is another coulomb of progress.',
+  'Stay grounded. You’ve got this. ⏚',
+  'Your focus has a seriously high Q factor right now.',
+  'Ohm my gosh, look at you go!',
+  'Keep calm and carry the one.',
+  'Positive charge detected. Pretty sure it’s you. ➕',
+  'Low impedance, high output. Love to see it.',
+  'Small signals add up. Superposition, baby.',
+  'You’re perfectly in phase with this task.',
+  'Debugging is just science with extra steps.',
+  'I run on your productivity. Thanks for the power! 💡',
+  'If it doesn’t work, check the ground. Then check it again.',
+  'Sip some water — hydrated brains have lower resistance. 💧',
+  'You’re a superconductor — zero resistance to getting stuff done.',
+  'Watt a great session so far!',
+  'I’m so amped for you right now! ⚡',
+  'Voltage check: fully powered. ✅',
+  'You’re on exactly the right wavelength.',
+  'This focus is coherent. Laser-grade. 🔦',
+  'Keep your signal-to-noise ratio high. Ignore the noise!',
+  'One bit at a time. Eight of those make a byte!',
+  'Little sparks start big fires. Keep going. 🔥',
+  'Every expert started as a beginner with a breadboard.',
+  'Your future self is going to be so proud of this pomodoro.',
+  'You’ve got more potential than a 9-volt battery. 🔋',
+  'Mistakes are just data. Collect them and iterate.',
+  'Steady state reached. You’re cruising.',
+  'Short-circuit your distractions. 🚫📱',
+  'Gain is up, distortion is low. Sounding great!',
+  'You’re conducting yourself brilliantly.',
+  'The startup transient is over — now it’s smooth sailing.',
+  'Phones down, focus up. You’re in the zone.',
+  'Science fact: you are 100% capable of finishing this.',
+];
+const BREAK_TIPS = [
+  'Stretch! Convert some potential energy into kinetic energy. 🙆',
+  '20-20-20: look at something 20 feet away for 20 seconds. 👀',
+  'Discharging… grab some water while the capacitor rests.',
+  'Roll your shoulders. Release that mechanical stress.',
+  'Step away from the screen. Your photoreceptors will thank you.',
+  'Deep breath in… and out. Excellent gas exchange. 🌬️',
+  'Snack time? Chemical energy is still energy. 🍎',
+  'Let your mind wander. Brownian motion is healthy.',
+  'Refill your water — you’re mostly salty water anyway. 💧',
+  'Walk around a bit. Get those electrons moving.',
+  'Unclench your jaw. Drop your shoulders. Ahh, lower stress.',
+  'Open a window — fresh O₂ for the processor upstairs. 🧠',
+  'Close your eyes for a few seconds. Let the sensors cool down.',
+  'Give your wrists a stretch. They do a lot of typing.',
+  'Have a laugh — endorphins are free energy. 😄',
+  'Tidy one thing on your desk. Fight that entropy!',
+];
+const FUN_FACTS = [
+  'Fun fact: a lightning bolt is about five times hotter than the surface of the Sun. ⚡',
+  'Fun fact: electrons drift through copper wire slower than a snail. The signal is what’s fast!',
+  'Fun fact: in 1947 Grace Hopper’s team taped a real moth into the logbook — the first literal “bug.” 🦋',
+  'Fun fact: your brain runs on roughly 20 watts. Very efficient hardware. 🧠',
+  'Fun fact: Ben Franklin picked which charge to call “positive” — so electrons ended up negative. Oops.',
+  'Fun fact: a capacitor hits ~63% charge after one time constant, τ = RC.',
+  'Fun fact: the first visible-light LED (red!) was made by Nick Holonyak in 1962. 🔴',
+  'Fun fact: superconductors have exactly zero resistance below their critical temperature. ❄️',
+  'Fun fact: Volta built the first battery in 1800 — a stack of zinc, copper and brine-soaked cloth.',
+  'Fun fact: the hertz is named after Heinrich Hertz, who first proved radio waves exist. 📻',
+  'Fun fact: a modern chip packs tens of billions of transistors onto something smaller than a postage stamp.',
+  'Fun fact: the Intel 4004 (1971) had about 2,300 transistors.',
+  'Fun fact: light travels about 30 cm in a nanosecond — Grace Hopper handed out wires that long to show it.',
+  'Fun fact: “ohm” backwards is “mho,” the old unit of conductance. (Now it’s the siemens.)',
+  'Fun fact: 2.4 GHz Wi-Fi shares its band with your microwave oven. 🍿',
+  'Fun fact: GPS satellites correct for relativity — otherwise they’d drift about 10 km a day. 🛰️',
+  'Fun fact: silicon is the second most abundant element in Earth’s crust.',
+  'Fun fact: “electron” comes from the Greek word for amber. ✨',
+  'Fun fact: a typical lightning bolt carries around 30,000 amps.',
+  'Fun fact: Ada Lovelace published the first algorithm meant for a machine in 1843.',
+  'Fun fact: the first transistor was made with gold foil, a plastic wedge and a paper-clip spring.',
+  'Fun fact: an electric eel can put out around 600 volts. 🐟',
+  'Fun fact: Ben Franklin also coined the word “battery” for electricity.',
+  'Fun fact: most quartz watches tick at 32,768 Hz — that’s exactly 2¹⁵. ⌚',
+  'Fun fact: one coulomb is about 6.24 × 10¹⁸ electrons.',
+  'Fun fact: the first computer mouse (1964) was carved out of wood. 🖱️',
+  'Fun fact: the Smith chart turns messy impedance math into a picture you can draw on.',
+  'Fun fact: Jensen Huang (NVIDIA) and Lisa Su (AMD) were both born in Tainan, Taiwan — and they’re relatives! 🇹🇼',
+];
+const START_WORK = ['Switch closed. Current flowing! ⚡', 'Powering up… let’s do this.', 'Circuit complete. Focus mode engaged.', 'Charging begins. I believe in you!'];
+const START_BREAK = ['Break time. Let the capacitor discharge. 😌', 'Go stretch — I’ll keep an eye on the clock.', 'Rest mode: on. You earned it.'];
+const RESUME_MSGS = ['Back online! ⚡', 'Resuming. Current restored.', 'And we’re back.'];
+const PAUSE_MSGS = ['Paused. Holding charge… 🔋', 'Open circuit. Take your time.', 'Standing by.'];
+const WORK_DONE = ['Fully charged! Time for a break ⚡', 'Session complete — +1 pomodoro! 🔋', 'Charge stored. Go recharge yourself!'];
+const LONG_EARNED = ['Full cycle complete! Long break unlocked 🎉', 'Battery bank full! Enjoy a long break 🎉'];
+const BREAK_DONE = ['Recharged! Back to the lab 🔬', 'Break’s over — let’s get that current flowing.', 'Capacitor reset. Ready for another round?'];
+const TICKLE = ['Hey! That tickles! ⚡', 'Careful, I’m live!', 'Bzzzt! Okay okay, I’m awake!', 'Too much current! 😵‍💫'];
+
+/* ================= sound ================= */
+const Snd = (() => {
+  let ctx = null, master, echoIn, noiseBuf, collect = null, alarmNodes = [];
+  const track = n => { if (collect) collect.push(n); return n; };
+
+  function ensure() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -14; comp.ratio.value = 4;
+      master = ctx.createGain();
+      master.connect(comp); comp.connect(ctx.destination);
+      // soft echo bus
+      echoIn = ctx.createGain();
+      const d = ctx.createDelay(1); d.delayTime.value = 0.27;
+      const fb = ctx.createGain(); fb.gain.value = 0.33;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2600;
+      const wet = ctx.createGain(); wet.gain.value = 0.4;
+      echoIn.connect(d); d.connect(lp); lp.connect(fb); fb.connect(d); lp.connect(wet); wet.connect(master);
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+      const ch = noiseBuf.getChannelData(0);
+      for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+      setVolume();
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function setVolume() { if (master) master.gain.value = muted ? 0 : settings.volume; }
+  function setMaster(v) { if (ensure()) master.gain.value = v; }
+
+  function tone(f, t, { dur = 1, type = 'sine', g = 0.2, attack = 0.005, echo = 0, slideTo = null } = {}) {
+    const o = track(ctx.createOscillator());
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur * 0.8);
+    const a = ctx.createGain();
+    a.gain.setValueAtTime(0.0001, t);
+    a.gain.exponentialRampToValueAtTime(g, t + attack);
+    a.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(a); a.connect(master);
+    if (echo) { const s = ctx.createGain(); s.gain.value = echo; a.connect(s); s.connect(echoIn); }
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  function noise(t, { dur = 0.1, g = 0.1, type = 'bandpass', freq = 2000, freqTo = null, q = 1 } = {}) {
+    const src = track(ctx.createBufferSource()); src.buffer = noiseBuf;
+    const f = ctx.createBiquadFilter(); f.type = type; f.Q.value = q;
+    f.frequency.setValueAtTime(freq, t);
+    if (freqTo) f.frequency.exponentialRampToValueAtTime(freqTo, t + dur);
+    const a = ctx.createGain();
+    a.gain.setValueAtTime(0.0001, t);
+    a.gain.exponentialRampToValueAtTime(g, t + 0.004);
+    a.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f); f.connect(a); a.connect(master);
+    src.start(t, Math.random() * 0.5); src.stop(t + dur + 0.05);
+  }
+
+  const INSTR = {
+    glass(f, t, v) { tone(f, t, { dur: 2.4, g: 0.16 * v, echo: 0.7 }); tone(f * 2.003, t, { dur: 1.3, g: 0.05 * v, echo: 0.4 }); tone(f * 3.01, t, { dur: 0.5, g: 0.02 * v }); },
+    musicbox(f, t, v) { f *= 2; tone(f, t, { dur: 1.5, g: 0.12 * v, attack: 0.002, echo: 0.6 }); tone(f * 2, t, { dur: 0.45, g: 0.035 * v, attack: 0.002 }); tone(f * 4.02, t, { dur: 0.18, g: 0.018 * v, attack: 0.001 }); },
+    marimba(f, t, v) { f /= 2; tone(f, t, { dur: 1, g: 0.32 * v, attack: 0.003, echo: 0.35 }); tone(f * 3.99, t, { dur: 0.14, g: 0.1 * v, attack: 0.002 }); tone(f * 9.8, t, { dur: 0.05, g: 0.025 * v, attack: 0.001 }); },
+    synth(f, t, v) {
+      const o = track(ctx.createOscillator()), o2 = track(ctx.createOscillator());
+      o.type = 'sawtooth'; o.frequency.value = f; o2.type = 'square'; o2.frequency.value = f * 1.005;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 6;
+      lp.frequency.setValueAtTime(4200, t); lp.frequency.exponentialRampToValueAtTime(300, t + 0.4);
+      const a = ctx.createGain();
+      a.gain.setValueAtTime(0.0001, t); a.gain.exponentialRampToValueAtTime(0.07 * v, t + 0.01); a.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      o.connect(lp); o2.connect(lp); lp.connect(a); a.connect(master);
+      const s = ctx.createGain(); s.gain.value = 0.6; a.connect(s); s.connect(echoIn);
+      o.start(t); o2.start(t); o.stop(t + 0.55); o2.stop(t + 0.55);
+    }
+  };
+  const N = { C5: 523.25, D5: 587.33, E5: 659.25, G5: 783.99, A5: 880, C6: 1046.5, D6: 1174.66, E6: 1318.51, G6: 1567.98, C7: 2093 };
+  const SONGS = {
+    workDone: [[0, 'C5'], [0.15, 'E5'], [0.3, 'G5'], [0.45, 'C6'], [0.85, 'E6']],
+    breakDone: [[0, 'D5'], [0.13, 'G5'], [0.26, 'A5'], [0.39, 'D6'], [0.75, 'G6']],
+    win: [[0, 'C6'], [0.08, 'E6'], [0.16, 'G6'], [0.24, 'C7']],
+  };
+  function play(song, { instr = settings.sound, repeat = 1, at = 0, gap = 2.4 } = {}) {
+    if (!ensure()) return;
+    const t0 = ctx.currentTime + 0.05 + at, fn = INSTR[instr] || INSTR.glass;
+    for (let r = 0; r < repeat; r++) for (const [dt, n] of SONGS[song]) fn(N[n], t0 + r * gap + dt, r ? 0.7 : 1);
+  }
+  // The alarm is scheduled on the audio clock when the timer starts, so it rings
+  // on time even if Chrome throttles timers in a background tab.
+  function scheduleAlarm(song, delaySec) {
+    cancelAlarm();
+    if (!ensure()) return;
+    collect = [];
+    play(song, { repeat: 2, at: Math.max(0, delaySec) });
+    alarmNodes = collect; collect = null;
+  }
+  function cancelAlarm() {
+    alarmNodes.forEach(n => { try { n.stop(); } catch (e) {} try { n.disconnect(); } catch (e) {} });
+    alarmNodes = [];
+  }
+  function releaseAlarm() { const had = alarmNodes.length > 0; alarmNodes = []; return had; }
+
+  const ui = fn => (...args) => { if (!settings.uiSounds || muted || !ensure()) return; fn(ctx.currentTime, ...args); };
+  return {
+    ensure, setVolume, setMaster, play, scheduleAlarm, cancelAlarm, releaseAlarm,
+    blip: ui((t, f = 880) => tone(f, t, { dur: 0.09, type: 'triangle', g: 0.08 })),
+    click: ui(t => noise(t, { dur: 0.025, g: 0.12, type: 'highpass', freq: 3000 })),
+    tick: ui(t => tone(2400, t, { dur: 0.02, type: 'square', g: 0.012 })),
+    zap: ui((t, v = 1) => { noise(t, { dur: 0.16, g: 0.09 * v, freq: 5000, freqTo: 500, q: 3 }); tone(1400, t, { dur: 0.12, type: 'sawtooth', g: 0.012 * v, slideTo: 200 }); }),
+    crackle: ui(t => noise(t, { dur: rand(0.02, 0.06), g: rand(0.02, 0.06), type: 'highpass', freq: rand(2000, 6000) })),
+    powerUp: ui(t => tone(320, t, { dur: 0.2, g: 0.08, slideTo: 760 })),
+    powerDown: ui(t => tone(700, t, { dur: 0.22, g: 0.07, slideTo: 260 })),
+    boing: ui(t => tone(380, t, { dur: 0.25, g: 0.09, slideTo: 980 })),
+  };
+})();
+
+/* ================= background circuit board ================= */
+const BG = (() => {
+  const cv = $('#bg'), c = cv.getContext('2d');
+  let W = 0, H = 0, dpr = 1, layer = null, traces = [], ends = [], pulses = [], sparks = [], rings = [], bolts = [];
+  let rgb = MODE_RGB.work.slice(), intensity = 0.3, last = performance.now();
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    W = innerWidth; H = innerHeight;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    build();
+  }
+  function build() {
+    const g = 34, cols = Math.ceil(W / g) + 1, rows = Math.ceil(H / g) + 1, occ = new Set();
+    const D = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
+    traces = []; ends = []; pulses = [];
+    const count = Math.round(W * H / 15000);
+    for (let i = 0; i < count; i++) {
+      let x = (Math.random() * cols) | 0, y = (Math.random() * rows) | 0;
+      if (occ.has(x + ',' + y)) continue;
+      occ.add(x + ',' + y);
+      let d = ((Math.random() * 4) | 0) * 2;
+      const pts = [[x, y]], segs = 2 + ((Math.random() * 5) | 0);
+      for (let s = 0; s < segs; s++) {
+        const steps = 1 + ((Math.random() * 4) | 0); let moved = false;
+        for (let k = 0; k < steps; k++) {
+          const nx = x + D[d][0], ny = y + D[d][1], key = nx + ',' + ny;
+          if (nx < 0 || ny < 0 || nx >= cols || ny >= rows || occ.has(key)) break;
+          x = nx; y = ny; occ.add(key); moved = true;
+        }
+        if (!moved) break;
+        pts.push([x, y]);
+        d = (d + (Math.random() < 0.5 ? 1 : 7)) % 8; // 45° bends, PCB style
+      }
+      if (pts.length < 2) continue;
+      const P = pts.map(([a, b]) => [a * g + 6, b * g + 6]), L = [0];
+      for (let j = 1; j < P.length; j++) L.push(L[j - 1] + Math.hypot(P[j][0] - P[j - 1][0], P[j][1] - P[j - 1][1]));
+      const tr = { P, L, len: L[L.length - 1] };
+      traces.push(tr);
+      ends.push({ tr, x: P[0][0], y: P[0][1], fwd: true }, { tr, x: P[P.length - 1][0], y: P[P.length - 1][1], fwd: false });
+    }
+    layer = document.createElement('canvas');
+    layer.width = cv.width; layer.height = cv.height;
+    const s = layer.getContext('2d');
+    s.setTransform(dpr, 0, 0, dpr, 0, 0);
+    s.fillStyle = 'rgba(140,210,200,.05)';
+    for (let x = 0; x < cols; x++) for (let y = 0; y < rows; y++) s.fillRect(x * g + 5, y * g + 5, 2, 2);
+    s.lineWidth = 2; s.lineCap = 'round'; s.lineJoin = 'round'; s.strokeStyle = 'rgba(214,163,92,.14)';
+    for (const t of traces) { s.beginPath(); t.P.forEach(([x, y], j) => j ? s.lineTo(x, y) : s.moveTo(x, y)); s.stroke(); }
+    for (const e of ends) { s.beginPath(); s.arc(e.x, e.y, 4.2, 0, 7); s.fillStyle = '#0b1418'; s.fill(); s.lineWidth = 1.6; s.strokeStyle = 'rgba(214,163,92,.3)'; s.stroke(); }
+    const chips = Math.max(2, Math.round(W * H / 260000));
+    for (let i = 0; i < chips; i++) {
+      const w = rand(56, 110), h = rand(34, 60), x = rand(20, Math.max(21, W - w - 20)), y = rand(20, Math.max(21, H - h - 20));
+      const pins = Math.max(2, Math.floor(w / 12));
+      s.fillStyle = 'rgba(214,163,92,.13)';
+      for (let p = 0; p < pins; p++) { const px = x + 8 + p * ((w - 16) / (pins - 1)); s.fillRect(px - 2, y - 6, 4, 6); s.fillRect(px - 2, y + h, 4, 6); }
+      s.beginPath(); s.roundRect(x, y, w, h, 5);
+      s.fillStyle = 'rgba(9,15,17,.95)'; s.fill();
+      s.lineWidth = 1.5; s.strokeStyle = 'rgba(214,163,92,.12)'; s.stroke();
+      s.beginPath(); s.arc(x + 9, y + 9, 2.5, 0, 7); s.fillStyle = 'rgba(214,163,92,.12)'; s.fill();
+    }
+  }
+  function pointAt(t, d) {
+    d = clamp(d, 0, t.len);
+    let i = 1; while (i < t.L.length - 1 && t.L[i] < d) i++;
+    const a = t.P[i - 1], b = t.P[i], seg = (t.L[i] - t.L[i - 1]) || 1, f = (d - t.L[i - 1]) / seg;
+    return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+  }
+  function spawn(end, tail) {
+    const e = end || ends[(Math.random() * ends.length) | 0];
+    if (!e) return;
+    pulses.push({ t: e.tr, fwd: e.fwd, pos: 0, speed: rand(70, 150), tail: tail || rand(36, 80) });
+  }
+  function jagged(x0, y0, x1, y1) {
+    const n = Math.max(4, Math.round(Math.hypot(x1 - x0, y1 - y0) / 14)), nx = -(y1 - y0), ny = x1 - x0, L = Math.hypot(nx, ny) || 1, pts = [];
+    for (let i = 0; i <= n; i++) { const t = i / n, o = (i === 0 || i === n) ? 0 : rand(-10, 10) * Math.sin(t * Math.PI); pts.push([x0 + (x1 - x0) * t + nx / L * o, y0 + (y1 - y0) * t + ny / L * o]); }
+    return pts;
+  }
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.clearRect(0, 0, W, H);
+    if (!W || !H) return;
+    if (layer && layer.width && layer.height) c.drawImage(layer, 0, 0, W, H);
+    const maxP = REDUCED ? 2 : Math.round(3 + intensity * 13);
+    if (pulses.length < maxP && Math.random() < dt * (1 + intensity * 7)) spawn();
+    c.globalCompositeOperation = 'lighter';
+    const [r, g, b] = rgb;
+    for (let i = pulses.length - 1; i >= 0; i--) {
+      const p = pulses[i];
+      p.pos += p.speed * dt * (0.6 + intensity * 0.7);
+      if (p.pos - p.tail > p.t.len) { pulses.splice(i, 1); continue; }
+      const NN = 12;
+      for (let k = NN - 1; k >= 0; k--) {
+        const d = p.pos - k * (p.tail / NN);
+        if (d < 0 || d > p.t.len) continue;
+        const [x, y] = pointAt(p.t, p.fwd ? d : p.t.len - d), a = 1 - k / NN;
+        c.fillStyle = `rgba(${r},${g},${b},${(0.55 * a * a).toFixed(3)})`;
+        c.beginPath(); c.arc(x, y, 1 + 1.8 * a, 0, 7); c.fill();
+      }
+      if (p.pos <= p.t.len) {
+        const [x, y] = pointAt(p.t, p.fwd ? p.pos : p.t.len - p.pos);
+        c.fillStyle = `rgba(${r},${g},${b},.13)`; c.beginPath(); c.arc(x, y, 9, 0, 7); c.fill();
+      }
+    }
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    for (let i = bolts.length - 1; i >= 0; i--) {
+      const B = bolts[i]; B.life -= dt;
+      if (B.life <= 0) { bolts.splice(i, 1); continue; }
+      const a = B.life / B.max;
+      c.beginPath();
+      B.pts.forEach(([x, y], j) => { const inner = j > 0 && j < B.pts.length - 1; const px = x + (inner ? rand(-2, 2) : 0), py = y + (inner ? rand(-2, 2) : 0); j ? c.lineTo(px, py) : c.moveTo(px, py); });
+      c.strokeStyle = `rgba(${r},${g},${b},${0.4 * a})`; c.lineWidth = 6; c.stroke();
+      c.strokeStyle = `rgba(255,255,245,${0.9 * a})`; c.lineWidth = 1.6; c.stroke();
+    }
+    const drag = Math.pow(0.04, dt);
+    c.lineWidth = 1.8;
+    for (let i = sparks.length - 1; i >= 0; i--) {
+      const s = sparks[i]; s.life -= dt;
+      if (s.life <= 0) { sparks.splice(i, 1); continue; }
+      s.vx *= drag; s.vy = s.vy * drag + 300 * dt;
+      s.x += s.vx * dt; s.y += s.vy * dt;
+      const a = Math.min(1, s.life * 2.2);
+      c.strokeStyle = s.white ? `rgba(255,255,240,${a})` : `rgba(${r},${g},${b},${a})`;
+      c.beginPath(); c.moveTo(s.x, s.y); c.lineTo(s.x - s.vx * 0.035, s.y - s.vy * 0.035); c.stroke();
+    }
+    for (let i = rings.length - 1; i >= 0; i--) {
+      const R = rings[i]; R.life -= dt;
+      if (R.life <= 0) { rings.splice(i, 1); continue; }
+      R.r += R.speed * dt;
+      c.strokeStyle = `rgba(${r},${g},${b},${0.6 * R.life / R.max})`; c.lineWidth = 2;
+      c.beginPath(); c.arc(R.x, R.y, R.r, 0, 7); c.stroke();
+    }
+    c.globalCompositeOperation = 'source-over';
+  }
+  function burst(x, y, n = 20, power = 1) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, sp = rand(80, 340) * power;
+      sparks.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: rand(0.35, 0.85), white: Math.random() < 0.35 });
+    }
+    rings.push({ x, y, r: 4, life: 0.6, max: 0.6, speed: 240 * power });
+  }
+  function zap(x, y) {
+    let best = null, bd = 240 * 240;
+    for (const e of ends) { const d = (e.x - x) ** 2 + (e.y - y) ** 2; if (d < bd) { bd = d; best = e; } }
+    if (!best) return;
+    bolts.push({ pts: jagged(x, y, best.x, best.y), life: 0.3, max: 0.3 });
+    spawn(best, 110);
+  }
+  let rt;
+  return {
+    init() { resize(); addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(resize, 150); }); requestAnimationFrame(frame); },
+    setColor(c3) { rgb = c3.slice(); },
+    setIntensity(v) { intensity = v; },
+    burst, zap,
+  };
+})();
+
+/* ================= seven-segment display ================= */
+const Seven = (() => {
+  const host = $('#sevenSeg');
+  const hs = (x1, x2, y, t = 5) => `${x1},${y} ${x1 + t},${y - t} ${x2 - t},${y - t} ${x2},${y} ${x2 - t},${y + t} ${x1 + t},${y + t}`;
+  const vs = (x, y1, y2, t = 5) => `${x},${y1} ${x + t},${y1 + t} ${x + t},${y2 - t} ${x},${y2} ${x - t},${y2 - t} ${x - t},${y1 + t}`;
+  const SEG = { a: hs(8, 52, 6), b: vs(54, 8, 53), c: vs(54, 57, 102), d: hs(8, 52, 104), e: vs(6, 57, 102), f: vs(6, 8, 53), g: hs(8, 52, 55) };
+  const MAP = ['abcdef', 'bc', 'abdeg', 'abcdg', 'bcfg', 'acdfg', 'acdefg', 'abc', 'abcdefg', 'abcdfg'];
+  const X = [0, 72, 160, 232];
+  let svg = '<svg viewBox="0 -3 312 116" aria-hidden="true"><g transform="translate(14 0) skewX(-7)">';
+  X.forEach((x, i) => { svg += `<g transform="translate(${x} 0)" data-d="${i}">`; for (const k in SEG) svg += `<polygon class="seg" data-s="${k}" points="${SEG[k]}"/>`; svg += '</g>'; });
+  svg += '<circle class="seg colon" cx="144" cy="35" r="6"/><circle class="seg colon" cx="144" cy="76" r="6"/></g></svg>';
+  host.innerHTML = svg;
+  const digits = X.map((_, i) => $$(`[data-d="${i}"] .seg`, host));
+  const colon = $$('.colon', host);
+  const cur = [-1, -1, -1, -1];
+  let colonOn = null;
+  return {
+    set(str) {
+      for (let i = 0; i < 4; i++) {
+        const n = +str[i]; if (cur[i] === n) continue; cur[i] = n;
+        digits[i].forEach(p => p.classList.toggle('on', MAP[n].includes(p.dataset.s)));
+      }
+    },
+    colon(on) { if (on === colonOn) return; colonOn = on; colon.forEach(c => c.classList.toggle('on', on)); }
+  };
+})();
+
+/* ================= timer state ================= */
+const durMs = m => settings[m] * 60000;
+const S = { mode: 'work', running: false, endAt: 0, remaining: durMs('work'), cycle: 0 };
+{ const sc = store.get('cycle', null); if (sc && sc.date === todayKey()) S.cycle = sc.n | 0; }
+const saveCycle = () => store.set('cycle', { date: todayKey(), n: S.cycle });
+
+let stats = store.get('stats', null);
+if (!stats || stats.date !== todayKey()) stats = { date: todayKey(), count: 0, minutes: 0 };
+function renderStats() { $('#todayStats').innerHTML = `⚡ <b>${stats.count}</b> ${stats.count === 1 ? 'pomodoro' : 'pomodoros'} · ${stats.minutes} min today`; }
+function bumpStats(min) {
+  if (stats.date !== todayKey()) stats = { date: todayKey(), count: 0, minutes: 0 };
+  stats.count++; stats.minutes += min; store.set('stats', stats); renderStats();
+}
+
+/* ================= Sparky ================= */
+const Sparky = (() => {
+  const el = $('#sparky'), bubble = $('#bubble');
+  let hold = 0, holdT, clicks = 0, clickT;
+  const face = f => { el.dataset.face = f; };
+  function mood() {
+    if (Date.now() < hold) return;
+    face(S.running ? (S.mode === 'work' ? 'focus' : 'break') : 'idle');
+    el.classList.toggle('lit', S.running);
+  }
+  function say(t) { bubble.textContent = t; bubble.classList.remove('pop'); void bubble.offsetWidth; bubble.classList.add('pop'); }
+  function excite(ms = 4000) {
+    hold = Date.now() + ms; face('happy'); el.classList.add('lit');
+    clearTimeout(holdT); holdT = setTimeout(() => { hold = 0; mood(); }, ms);
+  }
+  function bounce() { el.classList.remove('bounce'); void el.offsetWidth; el.classList.add('bounce'); }
+  el.addEventListener('animationend', e => { if (e.animationName === 'swing') el.classList.remove('bounce'); });
+  el.addEventListener('click', () => {
+    bounce(); clicks++;
+    clearTimeout(clickT); clickT = setTimeout(() => { clicks = 0; }, 1600);
+    if (clicks >= 5) {
+      clicks = 0; say(pick(TICKLE)); excite(1800);
+      const r = el.getBoundingClientRect(); BG.burst(r.left + r.width / 2, r.top + r.height * 0.4, 28); Snd.zap();
+    } else {
+      Snd.boing();
+      say(Math.random() < 0.4 ? pick(FUN_FACTS) : pick(S.running && S.mode !== 'work' ? BREAK_TIPS : ENCOURAGE));
+    }
+  });
+  return { mood, say, excite, bounce };
+})();
+
+/* ================= LCD quotes ================= */
+const LCD = (() => {
+  const N = QUOTES.length;
+  const tEl = $('#lcdText'), aEl = $('#lcdAuthor'), kEl = $('#lcdKind'), bar = $('#lcdBar');
+  const numEl = $('#lcdNum'), seenEl = $('#lcdSeen'), skipEl = $('#lcdSkip');
+  let cur = -1, typer;
+  // "seen" lasts for this tab's session: it survives a refresh and resets when the tab is closed
+  let seen = new Set();
+  try { (JSON.parse(sessionStorage.getItem('pomodohm.seen')) || []).forEach(i => { if (i >= 0 && i < N) seen.add(i); }); } catch (e) {}
+  const saveSeen = () => { try { sessionStorage.setItem('pomodohm.seen', JSON.stringify([...seen])); } catch (e) {} };
+  $('#lcdTotal').textContent = N; numEl.max = N;
+  skipEl.checked = store.get('skipSeen', true);
+  skipEl.addEventListener('change', () => { store.set('skipSeen', skipEl.checked); Snd.click(); });
+  function byline(who, note) {
+    aEl.innerHTML = '';
+    const w = document.createElement('span'); w.className = 'who'; w.textContent = '— ' + who;
+    aEl.append(w, note ? ` (${note})` : '');
+  }
+  function show(i) {
+    cur = i; seen.add(i); saveSeen();
+    numEl.value = i + 1; seenEl.textContent = `${seen.size}/${N}`;
+    const [kind, text, who, note] = QUOTES[i];
+    clearInterval(typer); aEl.textContent = '';
+    const full = kind === 'q' ? `“${text}”` : text;
+    kEl.textContent = kind === 'f' ? '★ SPOTLIGHT' : '';
+    if (REDUCED) { tEl.textContent = full; byline(who, note); return; }
+    let k = 0; tEl.textContent = '';
+    typer = setInterval(() => {
+      k += 1; tEl.textContent = full.slice(0, k);
+      if (k >= full.length) { clearInterval(typer); byline(who, note); }
+    }, 22);
+  }
+  function go(i) { show(((i % N) + N) % N); restartBar(); }
+  // random pick for clicks + auto-rotation; with "skip seen" on, every entry shows once before any repeats
+  function randomPick() {
+    let pool = [...Array(N).keys()].filter(i => i !== cur && !(skipEl.checked && seen.has(i)));
+    if (!pool.length) {
+      seen = new Set(cur >= 0 ? [cur] : []);
+      toast(`You’ve seen all ${N}! Starting a fresh shuffle ✨`);
+      pool = [...Array(N).keys()].filter(i => i !== cur);
+    }
+    return pool[(Math.random() * pool.length) | 0];
+  }
+  const random = () => go(randomPick());
+  // the little progress bar under the screen drives auto-rotation (hovering the LCD pauses it)
+  function restartBar() {
+    bar.classList.remove('run'); void bar.offsetWidth;
+    if (!settings.quoteSec) return; // 0 = only change on click
+    bar.style.animationDuration = settings.quoteSec + 's'; bar.classList.add('run');
+  }
+  bar.addEventListener('animationend', random);
+  $('#lcd').addEventListener('click', () => { Snd.click(); random(); });
+  // arrows and the number box browse in numbered order
+  $('#lcdNext').addEventListener('click', () => { Snd.click(); go(cur + 1); });
+  $('#lcdPrev').addEventListener('click', () => { Snd.click(); go(cur - 1); });
+  numEl.addEventListener('change', () => {
+    const n = Math.round(+numEl.value);
+    if (n >= 1 && n <= N) { Snd.click(); go(n - 1); } else numEl.value = cur + 1;
+  });
+  numEl.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'Escape') numEl.blur(); });
+  return { next: random, restartBar };
+})();
+
+/* ================= dial ================= */
+const RING_C = 2 * Math.PI * 140;
+const prog = $('#prog'), headG = $('#headG'), statusEl = $('#statusText'), chargeEl = $('#chargeText');
+prog.style.strokeDasharray = RING_C;
+(() => {
+  const g = $('#ticks'), NS = 'http://www.w3.org/2000/svg';
+  for (let i = 0; i < 60; i++) {
+    const a = i * Math.PI / 30, maj = i % 5 === 0, r1 = maj ? 149 : 152, r2 = 157;
+    const l = document.createElementNS(NS, 'line');
+    l.setAttribute('x1', 170 + Math.sin(a) * r1); l.setAttribute('y1', 170 - Math.cos(a) * r1);
+    l.setAttribute('x2', 170 + Math.sin(a) * r2); l.setAttribute('y2', 170 - Math.cos(a) * r2);
+    l.setAttribute('class', maj ? 'tick major' : 'tick');
+    g.appendChild(l);
+  }
+})();
+
+let baseTitle = document.title, flashT = null;
+function setTitle(t) { baseTitle = t; if (!flashT) document.title = t; }
+function alertTitle(msg) {
+  if (!document.hidden) return;
+  clearInterval(flashT); let on = false;
+  flashT = setInterval(() => { on = !on; document.title = on ? msg : baseTitle; }, 1000);
+}
+
+let lastSec = -1, lastPct = -1, lastStatus = '';
+function render() {
+  const total = durMs(S.mode), rem = Math.max(0, S.remaining);
+  const secs = Math.ceil(rem / 1000);
+  if (secs !== lastSec) {
+    lastSec = secs;
+    const m = Math.min(99, Math.floor(secs / 60)), s = secs % 60;
+    Seven.set(pad(m) + pad(s));
+    setTitle(`${S.running ? '⚡ ' : ''}${pad(m)}:${pad(s)} · ${MODE_NAME[S.mode]} — PomodΩhm`);
+  }
+  Seven.colon(!S.running || rem % 1000 > 500);
+  const elapsed = clamp(1 - rem / total, 0, 1);
+  const frac = S.mode === 'work' ? elapsed : 1 - elapsed; // focus charges up, breaks discharge
+  prog.style.strokeDashoffset = RING_C * (1 - frac);
+  headG.style.transform = `rotate(${frac * 360}deg)`;
+  const pct = Math.round(frac * 100);
+  if (pct !== lastPct) { lastPct = pct; chargeEl.innerHTML = `V<sub>C</sub> = ${pct}% charged`; }
+  const st = S.running ? (S.mode === 'work' ? 'CHARGING' : 'DISCHARGING') : (rem >= total ? 'READY' : 'PAUSED');
+  if (st !== lastStatus) { lastStatus = st; statusEl.textContent = st; }
+}
+
+const ICON = {
+  play: '<svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>',
+  pause: '<svg viewBox="0 0 24 24"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z" fill="currentColor"/></svg>',
+  vol: '<svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>',
+  mute: '<svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M23 9l-6 6M17 9l6 6"/></svg>',
+};
+function renderButton() {
+  const b = $('#startBtn');
+  b.innerHTML = S.running ? ICON.pause + '<span>Pause</span>' : ICON.play + `<span>${S.remaining < durMs(S.mode) ? 'Resume' : 'Start'}</span>`;
+  b.setAttribute('aria-label', S.running ? 'Pause (Space)' : 'Start (Space)');
+}
+
+let leds = [];
+function buildLeds() {
+  const w = $('#cycleLeds'); w.innerHTML = ''; leds = [];
+  for (let i = 0; i < settings.interval; i++) { const d = document.createElement('span'); d.className = 'led'; w.appendChild(d); leds.push(d); }
+  renderLeds();
+}
+function renderLeds() {
+  const n = settings.interval, lit = S.cycle === 0 ? 0 : ((S.cycle - 1) % n) + 1;
+  leds.forEach((l, i) => l.classList.toggle('on', i < lit));
+  $('#cycleLabel').textContent = lit >= n ? 'long break earned!' : `${n - lit} to long break`;
+}
+
+let nextEnc = 0, nextIdleChat = Date.now() + rand(2, 3) * 60000;
+function scheduleEnc() { nextEnc = Date.now() + (S.mode === 'work' ? rand(3, 6) : rand(1.5, 3)) * 60000; }
+
+function afterStateChange() {
+  document.body.classList.toggle('running', S.running);
+  BG.setIntensity(S.running ? 1 : 0.3);
+  Sparky.mood(); renderButton();
+  lastSec = -1; render();
+}
+const songFor = mode => mode === 'work' ? 'workDone' : 'breakDone';
+
+function start(opts = {}) {
+  if (S.running) return;
+  Snd.ensure();
+  const total = durMs(S.mode);
+  if (S.remaining <= 0) S.remaining = total;
+  const fresh = S.remaining >= total;
+  S.endAt = Date.now() + S.remaining; S.running = true;
+  Snd.scheduleAlarm(songFor(S.mode), S.remaining / 1000);
+  afterStateChange(); scheduleEnc();
+  if (!opts.quiet) { Snd.powerUp(); Sparky.say(fresh ? pick(S.mode === 'work' ? START_WORK : START_BREAK) : pick(RESUME_MSGS)); }
+}
+function pause() {
+  if (!S.running) return;
+  S.remaining = Math.max(0, S.endAt - Date.now()); S.running = false;
+  Snd.cancelAlarm(); afterStateChange(); Snd.powerDown(); Sparky.say(pick(PAUSE_MSGS));
+}
+const toggle = () => S.running ? pause() : start();
+function reset() { Snd.cancelAlarm(); S.running = false; S.remaining = durMs(S.mode); afterStateChange(); Snd.click(); }
+function setMode(m) {
+  Snd.cancelAlarm();
+  S.mode = m; S.running = false; S.remaining = durMs(m);
+  document.body.dataset.mode = m; BG.setColor(MODE_RGB[m]);
+  $$('.mode-switch button').forEach(b => { const on = b.dataset.mode === m; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+  renderLeds(); afterStateChange();
+}
+function skip() {
+  const was = S.mode;
+  if (was === 'long') S.cycle = 0;
+  saveCycle();
+  setMode(was === 'work' ? 'short' : 'work');
+  Snd.click();
+  Sparky.say(was === 'work' ? 'Skipped ahead to a break. No judgement. ☕' : 'Break skipped — straight back to it!');
+}
+function celebrate(msg) {
+  const r = $('.dial-wrap').getBoundingClientRect();
+  BG.burst(r.left + r.width / 2, r.top + r.height / 2, 70, 1.8);
+  const f = $('#flash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+  Sparky.excite(5000); Sparky.bounce(); Sparky.say(msg); toast(msg);
+}
+function complete() {
+  const was = S.mode, overshoot = Math.max(0, Date.now() - S.endAt);
+  S.running = false; S.remaining = 0;
+  if (!Snd.releaseAlarm()) Snd.play(songFor(was), { repeat: 2 }); // fallback if the scheduled alarm wasn't set
+  let next;
+  if (was === 'work') { S.cycle++; bumpStats(settings.work); next = S.cycle % settings.interval === 0 ? 'long' : 'short'; }
+  else { next = 'work'; if (was === 'long') S.cycle = 0; }
+  saveCycle();
+  const msg = was === 'work' ? (next === 'long' ? pick(LONG_EARNED) : pick(WORK_DONE)) : pick(BREAK_DONE);
+  alertTitle(was === 'work' ? '⚡ Break time!' : '⚡ Back to work!');
+  setMode(next);
+  celebrate(msg);
+  if (next === 'work' ? settings.autoWork : settings.autoBreak) {
+    S.remaining = Math.max(1000, durMs(next) - overshoot);
+    start({ quiet: true });
+  }
+}
+function tick() {
+  if (S.running) {
+    S.remaining = Math.max(0, S.endAt - Date.now());
+    if (S.remaining <= 0) { complete(); return; }
+    if (settings.encourage && Date.now() > nextEnc) { Sparky.say(pick(S.mode === 'work' ? ENCOURAGE : BREAK_TIPS)); scheduleEnc(); }
+  } else if (settings.encourage && Date.now() > nextIdleChat) {
+    // while idle, Sparky shares a fun fact every few minutes
+    Sparky.say(pick(FUN_FACTS)); nextIdleChat = Date.now() + rand(3, 5) * 60000;
+  }
+  render();
+}
+setInterval(tick, 200);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { if (flashT) { clearInterval(flashT); flashT = null; document.title = baseTitle; } tick(); }
+});
+
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3800); }
+
+/* ================= knobs + oscilloscope ================= */
+function Knob(el, { min, max, value, onChange }) {
+  const dial = el.querySelector('.knob-dial');
+  let v = value, lastDet = null, drag = false, sx = 0, sy = 0, sv = 0;
+  el.setAttribute('aria-valuemin', min); el.setAttribute('aria-valuemax', max);
+  function set(nv, silent) {
+    v = clamp(nv, min, max);
+    const n = (v - min) / (max - min);
+    dial.style.transform = `rotate(${-135 + 270 * n}deg)`;
+    const det = Math.round(n * 20);
+    if (!silent && det !== lastDet) Snd.tick();
+    lastDet = det;
+    el.setAttribute('aria-valuenow', v.toFixed(2));
+    onChange(v);
+  }
+  el.addEventListener('pointerdown', e => { drag = true; sx = e.clientX; sy = e.clientY; sv = v; el.setPointerCapture(e.pointerId); el.classList.add('grab'); });
+  el.addEventListener('pointermove', e => { if (drag) set(sv + ((sy - e.clientY) + (e.clientX - sx)) / 160 * (max - min)); });
+  const end = () => { drag = false; el.classList.remove('grab'); };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  el.addEventListener('wheel', e => { e.preventDefault(); set(v - Math.sign(e.deltaY) * (max - min) / 30); }, { passive: false });
+  el.addEventListener('keydown', e => {
+    const step = (max - min) / 20;
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { set(v + step); e.preventDefault(); }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { set(v - step); e.preventDefault(); }
+  });
+  set(value, true);
+}
+
+function whenVisible(el, cb) {
+  if (!('IntersectionObserver' in window)) { cb(true); return; }
+  new IntersectionObserver(es => es.forEach(e => cb(e.isIntersecting))).observe(el);
+}
+
+(() => {
+  const cv = $('#scope'), c = cv.getContext('2d'), read = $('#scopeRead');
+  const WAVES = ['SINE', 'SQUARE', 'TRIANGLE', 'SAW', 'RC CHARGE'];
+  let wave = 0, freq = 1.5, amp = 0.7, phase = 0, hold = false, visible = true, W = 0, H = 0, last = performance.now();
+  function size() {
+    const r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
+    W = r.width; H = r.height; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function fn(p) {
+    const u = ((p / (2 * Math.PI)) % 1 + 1) % 1;
+    switch (wave) {
+      case 0: return Math.sin(p);
+      case 1: return u < 0.5 ? 1 : -1;
+      case 2: return u < 0.5 ? 4 * u - 1 : 3 - 4 * u;
+      case 3: return 2 * u - 1;
+      default: { const k = 7; return u < 0.5 ? (1 - Math.exp(-u * 2 * k)) * 2 - 1 : Math.exp(-(u - 0.5) * 2 * k) * 2 - 1; }
+    }
+  }
+  function updateRead() { read.textContent = `${WAVES[wave]} · ${freq.toFixed(1)} Hz · ${(amp * 5).toFixed(1)} Vpp${hold ? ' · HOLD' : ''}`; }
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!visible || !W) return;
+    if (!hold) phase += dt * Math.PI * 2 * 0.4;
+    c.globalCompositeOperation = 'destination-out';
+    c.fillStyle = 'rgba(0,0,0,.3)'; c.fillRect(0, 0, W, H);
+    c.globalCompositeOperation = 'source-over';
+    c.beginPath();
+    const cycles = freq * 2;
+    for (let x = 0; x <= W; x += 2) {
+      const y = H / 2 - fn((x / W) * cycles * 2 * Math.PI + phase) * amp * H * 0.4;
+      x ? c.lineTo(x, y) : c.moveTo(x, y);
+    }
+    c.lineWidth = 2; c.strokeStyle = 'rgba(130,255,195,.95)';
+    c.shadowColor = '#5cffb0'; c.shadowBlur = 9; c.stroke(); c.shadowBlur = 0;
+  }
+  const cycleWave = () => { wave = (wave + 1) % WAVES.length; $('#waveBtn').textContent = WAVES[wave].split(' ')[0]; Snd.click(); updateRead(); };
+  $('#waveBtn').addEventListener('click', cycleWave);
+  $('#scopeScreen').addEventListener('click', cycleWave);
+  $('#holdBtn').addEventListener('click', e => { hold = !hold; e.currentTarget.classList.toggle('on', hold); Snd.click(); updateRead(); });
+  Knob($('#kFreq'), { min: 0.5, max: 6, value: freq, onChange: v => { freq = v; updateRead(); } });
+  Knob($('#kAmp'), { min: 0.1, max: 1, value: amp, onChange: v => { amp = v; updateRead(); } });
+  if ('ResizeObserver' in window) new ResizeObserver(size).observe(cv); else addEventListener('resize', size);
+  size(); updateRead();
+  whenVisible(cv, v => { visible = v; });
+  requestAnimationFrame(frame);
+})();
+
+/* ================= plasma globe ================= */
+(() => {
+  const cv = $('#plasma'), c = cv.getContext('2d'), W = 220, H = 250, dpr = Math.min(devicePixelRatio || 1, 2);
+  cv.width = W * dpr; cv.height = H * dpr; c.scale(dpr, dpr);
+  const cx = 110, cy = 110, R = 96, CORE = 15;
+  const fil = Array.from({ length: 9 }, (_, i) => ({ a: i / 9 * Math.PI * 2, v: 0, seed: Math.random() * 100 }));
+  const ptr = { in: false, x: 0, y: 0, down: false };
+  let visible = true, last = performance.now(), crackleT = null;
+  const n1 = x => (Math.sin(x * 1.7) + Math.sin(x * 2.9 + 1.3) * 0.6 + Math.sin(x * 5.3 + 2.1) * 0.3) / 1.9;
+  function bolt(x0, y0, x1, y1, seed, time, jag) {
+    const dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L, pts = [], N = 16;
+    for (let j = 0; j <= N; j++) {
+      const t = j / N, off = Math.sin(t * Math.PI) * (n1(seed + j * 0.9 + time * 2.2) * jag + (Math.random() - 0.5) * 2.2);
+      pts.push([x0 + dx * t + nx * off, y0 + dy * t + ny * off]);
+    }
+    return pts;
+  }
+  function line(pts, w, col) { c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.lineWidth = w; c.strokeStyle = col; c.stroke(); }
+  function glow(x, y, r, col) { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, col); g.addColorStop(1, 'rgba(255,80,220,0)'); c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); }
+  function drawBase() {
+    const top = cy + R - 14, bot = H - 4;
+    const g = c.createLinearGradient(0, top, 0, bot); g.addColorStop(0, '#2c3438'); g.addColorStop(1, '#101518');
+    c.fillStyle = g; c.beginPath();
+    c.moveTo(cx - 34, top); c.lineTo(cx + 34, top); c.lineTo(cx + 60, bot - 8); c.quadraticCurveTo(cx + 62, bot, cx + 52, bot);
+    c.lineTo(cx - 52, bot); c.quadraticCurveTo(cx - 62, bot, cx - 60, bot - 8); c.closePath(); c.fill();
+    c.fillStyle = ptr.down ? '#ff5ad1' : '#6e3563';
+    c.beginPath(); c.arc(cx, bot - 14, 3, 0, 7); c.fill();
+    if (ptr.down) glow(cx, bot - 14, 10, 'rgba(255,90,210,.6)');
+  }
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!visible) return;
+    const time = now / 1000;
+    c.clearRect(0, 0, W, H);
+    drawBase();
+    const g = c.createRadialGradient(cx, cy, CORE, cx, cy, R);
+    g.addColorStop(0, 'rgba(120,40,170,.35)'); g.addColorStop(0.7, 'rgba(40,12,72,.4)'); g.addColorStop(1, 'rgba(22,10,42,.7)');
+    c.fillStyle = g; c.beginPath(); c.arc(cx, cy, R, 0, 7); c.fill();
+
+    const ta = ptr.in ? Math.atan2(ptr.y - cy, ptr.x - cx) : null;
+    const attracted = new Set();
+    if (ta !== null) fil.slice().sort((p, q) => Math.abs(angDiff(ta, p.a)) - Math.abs(angDiff(ta, q.a))).slice(0, ptr.down ? 4 : 2).forEach(f => attracted.add(f));
+    for (const f of fil) { f.v += (Math.random() - 0.5) * dt * 5; f.v *= Math.pow(0.3, dt); f.a += f.v * dt; }
+    for (let i = 0; i < fil.length; i++) for (let j = i + 1; j < fil.length; j++) {
+      const A = fil[i], B = fil[j]; if (attracted.has(A) || attracted.has(B)) continue;
+      const d = angDiff(A.a, B.a);
+      if (Math.abs(d) < 0.5) { const push = (0.5 - Math.abs(d)) * (d >= 0 ? 1 : -1) * dt * 1.6; A.a += push; B.a -= push; }
+    }
+    attracted.forEach(f => { f.a += angDiff(ta, f.a) * Math.min(1, dt * 8); });
+
+    c.save(); c.beginPath(); c.arc(cx, cy, R - 1, 0, 7); c.clip();
+    c.globalCompositeOperation = 'lighter'; c.lineCap = 'round'; c.lineJoin = 'round';
+    for (const f of fil) {
+      const hot = attracted.has(f);
+      const ex = cx + Math.cos(f.a) * (R - 2), ey = cy + Math.sin(f.a) * (R - 2);
+      const pts = bolt(cx + Math.cos(f.a) * CORE * 0.8, cy + Math.sin(f.a) * CORE * 0.8, ex, ey, f.seed, time, hot ? 7 : 12);
+      line(pts, hot ? 8 : 6, 'rgba(170,70,255,.11)');
+      line(pts, hot ? 3.2 : 2, 'rgba(255,110,220,.38)');
+      line(pts, hot ? 1.4 : 1, 'rgba(255,232,255,.85)');
+      const bp = pts[10], ba = f.a + Math.sin(time * 1.3 + f.seed) * 0.6, bl = R * 0.32;
+      line(bolt(bp[0], bp[1], bp[0] + Math.cos(ba) * bl, bp[1] + Math.sin(ba) * bl, f.seed + 50, time, 5), 1, 'rgba(255,150,230,.4)');
+      glow(ex, ey, hot ? 16 : 9, hot ? 'rgba(255,170,240,.75)' : 'rgba(255,120,220,.45)');
+    }
+    c.restore();
+    c.globalCompositeOperation = 'lighter';
+    const cg = c.createRadialGradient(cx, cy, 0, cx, cy, CORE * 1.8);
+    cg.addColorStop(0, 'rgba(255,255,255,1)'); cg.addColorStop(0.35, 'rgba(255,170,240,.9)'); cg.addColorStop(1, 'rgba(160,60,255,0)');
+    c.fillStyle = cg; c.beginPath(); c.arc(cx, cy, CORE * 1.8, 0, 7); c.fill();
+    if (ta !== null) glow(cx + Math.cos(ta) * R, cy + Math.sin(ta) * R, ptr.down ? 26 : 16, ptr.down ? 'rgba(255,190,245,.8)' : 'rgba(255,150,235,.45)');
+    c.globalCompositeOperation = 'source-over';
+    c.strokeStyle = 'rgba(255,255,255,.2)'; c.lineWidth = 1.5; c.beginPath(); c.arc(cx, cy, R, 0, 7); c.stroke();
+    c.strokeStyle = 'rgba(255,255,255,.28)'; c.lineWidth = 4; c.lineCap = 'round'; c.beginPath(); c.arc(cx, cy, R - 9, -2.7, -2.05); c.stroke();
+  }
+  function setPtr(e) {
+    const r = cv.getBoundingClientRect();
+    ptr.x = (e.clientX - r.left) * (W / r.width); ptr.y = (e.clientY - r.top) * (H / r.height);
+    ptr.in = Math.hypot(ptr.x - cx, ptr.y - cy) < R + 6;
+  }
+  const release = () => { ptr.down = false; clearInterval(crackleT); };
+  cv.addEventListener('pointermove', setPtr);
+  cv.addEventListener('pointerleave', () => { ptr.in = false; release(); });
+  cv.addEventListener('pointerdown', e => {
+    setPtr(e); if (!ptr.in) return;
+    ptr.down = true; Snd.zap(0.5);
+    clearInterval(crackleT); crackleT = setInterval(() => { if (ptr.down && Math.random() < 0.6) Snd.crackle(); }, 70);
+  });
+  cv.addEventListener('pointerup', release); cv.addEventListener('pointercancel', release);
+  whenVisible(cv, v => { visible = v; });
+  requestAnimationFrame(frame);
+})();
+
+/* ================= lights out ================= */
+(() => {
+  const grid = $('#loGrid'), movesEl = $('#loMoves'), msg = $('#loMsg');
+  const lit = Array(25).fill(false); let moves = 0;
+  const HELP = 'Turn every LED off. Each press flips a ✚ shape.';
+  const btns = Array.from({ length: 25 }, (_, i) => {
+    const b = document.createElement('button');
+    b.className = 'lo'; b.style.setProperty('--i', (i % 5) + Math.floor(i / 5));
+    b.setAttribute('aria-label', `LED row ${Math.floor(i / 5) + 1} column ${i % 5 + 1}`);
+    b.addEventListener('click', () => press(i));
+    grid.appendChild(b); return b;
+  });
+  function toggle(i) {
+    const r = Math.floor(i / 5), col = i % 5;
+    [i, r > 0 && i - 5, r < 4 && i + 5, col > 0 && i - 1, col < 4 && i + 1].forEach(k => { if (k !== false) lit[k] = !lit[k]; });
+  }
+  function draw() { btns.forEach((b, i) => { b.classList.toggle('on', lit[i]); b.setAttribute('aria-pressed', lit[i]); }); movesEl.textContent = moves; }
+  function press(i) {
+    toggle(i); moves++; draw();
+    const on = lit.filter(Boolean).length;
+    Snd.blip(420 + on * 28);
+    if (on === 0) {
+      msg.textContent = `Circuit de-energized in ${moves} moves! ✨`;
+      Snd.play('win', { instr: 'glass' });
+      grid.classList.remove('win'); void grid.offsetWidth; grid.classList.add('win');
+    } else if (msg.textContent !== HELP) msg.textContent = HELP;
+  }
+  function scramble() {
+    lit.fill(false);
+    shuffle([...Array(25).keys()]).slice(0, 7 + ((Math.random() * 6) | 0)).forEach(toggle); // always solvable
+    if (lit.every(v => !v)) return scramble();
+    moves = 0; msg.textContent = HELP; grid.classList.remove('win'); draw();
+  }
+  $('#loNew').addEventListener('click', () => { Snd.click(); scramble(); });
+  scramble();
+})();
+
+/* ================= DIP switch ================= */
+(() => {
+  const row = $('#dipRow'); let val = 0;
+  const EGG = {
+    0: 'All bits low. Very zen. Flip some switches!', 1: 'Just the LSB. Humble beginnings.', 7: 'Lucky seven. 🍀',
+    13: 'Carriage return. Time for a fresh line.', 37: '37 °C — body temperature. You’re alive!', 42: 'The Answer to Life, the Universe and Everything. 🌌',
+    64: '“@” — at your service.', 69: 'Nice.', 85: '0x55 — alternating bits. Very square-wave.', 99: 'Ninety-nine bottles of solder flux…',
+    127: 'Max signed 8-bit int. One more and it overflows!', 128: 'Only the MSB. Lonely at the top.', 170: '0xAA — the other alternating pattern.',
+    255: 'All bits high! Maximum vibes. 🔆',
+  };
+  for (let b = 7; b >= 0; b--) {
+    const s = document.createElement('button');
+    s.className = 'dip-sw'; s.innerHTML = '<span></span>'; s.setAttribute('aria-label', `bit ${b}`); s.setAttribute('aria-pressed', 'false');
+    s.addEventListener('click', () => { val ^= (1 << b); const on = !!(val & (1 << b)); s.classList.toggle('on', on); s.setAttribute('aria-pressed', on); Snd.click(); update(); });
+    row.appendChild(s);
+  }
+  function update() {
+    $('#dipDec').textContent = val;
+    $('#dipHex').textContent = '0x' + val.toString(16).toUpperCase().padStart(2, '0');
+    $('#dipChr').textContent = val > 32 && val < 127 ? String.fromCharCode(val) : (val === 32 ? '␠' : '·');
+    let m = EGG[val];
+    if (!m) {
+      if (val >= 65 && val <= 90) m = `Capital “${String.fromCharCode(val)}”. Try adding 32 for lowercase!`;
+      else if (val >= 97 && val <= 122) m = `Lowercase “${String.fromCharCode(val)}”. Bit 5 makes the difference.`;
+      else if (val >= 48 && val <= 57) m = `The digit “${String.fromCharCode(val)}” in ASCII.`;
+      else if ((val & (val - 1)) === 0) m = `A pure power of two: 2^${Math.log2(val)}.`;
+      else m = `${val.toString(2).padStart(8, '0')} in binary.`;
+    }
+    $('#dipMsg').textContent = m;
+  }
+  update();
+})();
+
+/* ================= settings ================= */
+const dlg = $('#settings'), form = $('#setForm');
+function fillForm(src) {
+  const f = form.elements;
+  ['work', 'short', 'long', 'interval', 'volume', 'sound', 'quoteSec'].forEach(k => { f[k].value = src[k]; });
+  ['autoBreak', 'autoWork', 'encourage', 'uiSounds'].forEach(k => { f[k].checked = src[k]; });
+}
+$('#settingsBtn').addEventListener('click', () => { Snd.click(); fillForm(settings); dlg.showModal(); });
+$('#cancelBtn').addEventListener('click', () => dlg.close());
+$('#defaultsBtn').addEventListener('click', () => fillForm(DEFAULTS));
+dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+dlg.addEventListener('close', () => Snd.setVolume());
+form.elements.volume.addEventListener('input', e => Snd.setMaster(+e.target.value));
+$('#testSound').addEventListener('click', () => { Snd.setMaster(+form.elements.volume.value); Snd.play('workDone', { instr: form.elements.sound.value }); });
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  const f = form.elements;
+  const num = (k, lo, hi) => { const v = Math.round(+f[k].value); return Number.isFinite(v) && v > 0 ? clamp(v, lo, hi) : DEFAULTS[k]; };
+  const soundChanged = f.sound.value !== settings.sound, prevQuoteSec = settings.quoteSec;
+  Object.assign(settings, {
+    work: num('work', 1, 99), short: num('short', 1, 60), long: num('long', 1, 99), interval: num('interval', 2, 12),
+    autoBreak: f.autoBreak.checked, autoWork: f.autoWork.checked, encourage: f.encourage.checked, uiSounds: f.uiSounds.checked,
+    sound: f.sound.value, volume: clamp(+f.volume.value, 0, 1),
+    quoteSec: f.quoteSec.value === '' || !Number.isFinite(+f.quoteSec.value) ? DEFAULTS.quoteSec : clamp(Math.round(+f.quoteSec.value), 0, 3600),
+  });
+  store.set('settings', settings);
+  dlg.close();
+  buildLeds();
+  if (!S.running) S.remaining = durMs(S.mode);
+  else if (soundChanged) Snd.scheduleAlarm(songFor(S.mode), (S.endAt - Date.now()) / 1000);
+  afterStateChange();
+  if (settings.quoteSec !== prevQuoteSec) LCD.restartBar();
+  toast('Settings saved ✓');
+});
+
+/* ================= wiring ================= */
+function renderMute() { const b = $('#muteBtn'); b.innerHTML = muted ? ICON.mute : ICON.vol; b.title = muted ? 'Unmute (M)' : 'Mute (M)'; b.setAttribute('aria-label', b.title); }
+function toggleMute() { muted = !muted; store.set('muted', muted); Snd.setVolume(); renderMute(); toast(muted ? 'Sound muted 🔇' : 'Sound on 🔊'); }
+
+$('#muteBtn').addEventListener('click', toggleMute);
+$('#startBtn').addEventListener('click', toggle);
+$('#resetBtn').addEventListener('click', reset);
+$('#skipBtn').addEventListener('click', skip);
+$$('.mode-switch button').forEach(b => b.addEventListener('click', () => { Snd.click(); setMode(b.dataset.mode); }));
+
+const task = $('#taskInput');
+task.value = store.get('task', '');
+task.addEventListener('input', () => store.set('task', task.value));
+task.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'Escape') task.blur(); });
+
+document.addEventListener('pointerdown', e => {
+  Snd.ensure(); // unlock audio on first interaction
+  if (e.target.closest('.card, button, input, select, label, dialog, .brand, .top-actions, .hint')) return;
+  BG.burst(e.clientX, e.clientY, 22); BG.zap(e.clientX, e.clientY); Snd.zap(0.7);
+});
+
+document.addEventListener('keydown', e => {
+  if (dlg.open || e.ctrlKey || e.metaKey || e.altKey) return;
+  const tag = e.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+    toggle();
+  } else if (e.key === 'r' || e.key === 'R') reset();
+  else if (e.key === 's' || e.key === 'S') skip();
+  else if (e.key === 'm' || e.key === 'M') toggleMute();
+});
+
+/* ================= go ================= */
+BG.init();
+renderMute(); renderStats(); buildLeds(); setMode('work');
+LCD.next();
+Sparky.say('Hi, I’m Sparky! 💡 Press start and let’s get some current flowing.');
+})();
+</script>
+</body>
+</html>
