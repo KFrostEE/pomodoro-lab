@@ -300,6 +300,20 @@ dialog::backdrop{background:rgba(3,8,10,.6);backdrop-filter:blur(3px)}
 .dlg-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:16px}
 .dlg-actions div{display:flex;gap:8px}
 
+/* ---------- links to the other timers ---------- */
+.variants{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)}
+.variants-title{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.variants-list{display:grid;gap:8px}
+.variant{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:var(--text);text-decoration:none;transition:background .2s,border-color .2s}
+a.variant:hover{background:rgba(var(--accent-rgb),.12);border-color:rgba(var(--accent-rgb),.45)}
+.variant.here{opacity:.6}
+.variant .v-icon{font-size:22px;width:28px;text-align:center}
+.variant b{display:block;font-size:14.5px}
+.variant small{color:var(--muted);font-size:12px}
+.variant .v-go{margin-left:auto;color:var(--accent);font-size:16px}
+.variant-links a{color:var(--muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,.25)}
+.variant-links a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+
 /* ---------- keyframes ---------- */
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes blink{to{opacity:.15}}
@@ -520,6 +534,7 @@ dialog::backdrop{background:rgba(3,8,10,.6);backdrop-filter:blur(3px)}
 
   <footer class="hint">
     <kbd>Space</kbd> start / pause &nbsp;·&nbsp; <kbd>R</kbd> reset &nbsp;·&nbsp; <kbd>S</kbd> skip &nbsp;·&nbsp; <kbd>M</kbd> mute &nbsp;·&nbsp; click any empty space for sparks ⚡
+    <div class="variant-links" id="variantFoot"></div>
   </footer>
 </div>
 
@@ -553,6 +568,10 @@ dialog::backdrop{background:rgba(3,8,10,.6);backdrop-filter:blur(3px)}
       <button type="button" class="btn" id="testSound">▶ Test</button>
     </div>
     <div class="row"><span>Volume</span><input type="range" name="volume" min="0" max="1" step="0.05"></div>
+    <div class="variants">
+      <div class="variants-title">More timers in the lab</div>
+      <div class="variants-list" id="variantList"></div>
+    </div>
     <div class="dlg-actions">
       <button type="button" class="btn link" id="defaultsBtn">Reset to defaults</button>
       <div>
@@ -1680,6 +1699,21 @@ form.addEventListener('submit', e => {
   if (settings.quoteSec !== prevQuoteSec) LCD.restartBar();
   toast('Settings saved ✓');
 });
+
+/* ================= other timers in the series =================
+   Keep this list identical in every variant (PomodOhm, Apollodoro, …); add a line here for each new one. */
+const VARIANTS = [
+  { file: 'PomodOhm.html', name: 'PomodΩhm', icon: '⚡', blurb: 'Electrical engineering · circuits, LEDs & Sparky' },
+  { file: 'Apollodoro.html', name: 'Apollodoro', icon: '🚀', blurb: 'Aerospace · rockets, orbits & Rocky' },
+];
+(() => {
+  const here = decodeURIComponent(location.pathname.split('/').pop() || '').toLowerCase();
+  const isHere = v => here === v.file.toLowerCase();
+  $('#variantList').innerHTML = VARIANTS.map(v => isHere(v)
+    ? `<div class="variant here"><span class="v-icon">${v.icon}</span><span><b>${v.name}</b><small>you’re here</small></span></div>`
+    : `<a class="variant" href="${v.file}"><span class="v-icon">${v.icon}</span><span><b>${v.name}</b><small>${v.blurb}</small></span><span class="v-go">→</span></a>`).join('');
+  $('#variantFoot').innerHTML = 'Other timers: ' + VARIANTS.filter(v => !isHere(v)).map(v => `<a href="${v.file}">${v.icon} ${v.name}</a>`).join(' &nbsp;·&nbsp; ');
+})();
 
 /* ================= wiring ================= */
 function renderMute() { const b = $('#muteBtn'); b.innerHTML = muted ? ICON.mute : ICON.vol; b.title = muted ? 'Unmute (M)' : 'Mute (M)'; b.setAttribute('aria-label', b.title); }
